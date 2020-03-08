@@ -1,0 +1,44 @@
+.dynamics_ul {
+    margin-top: 3em;
+}
+
+li.dynamics_list {
+    list-style: none;
+    margin-bottom: 3em;
+}
+
+.dynamics_list .dynamic-author {
+    display: flex;
+    align-items: center;
+}
+
+.dynamics_list .dynamic-author span img {
+    border-radius: 50%;
+}
+
+.dynamics_list .dynamic-author cite {
+    font-size: 13px;
+    padding-left: 10px;
+    font-style: normal;
+}
+
+.dynamics_list .dynamic-meta {
+    margin-left: 40px;
+    padding-bottom: 5px;
+}
+
+.dynamics_list .dynamic-meta a {
+    color: #8f949e;
+}
+
+.dynamics_list .dynamic-content {
+    word-wrap: break-word;
+    word-break: break-all;
+    padding-top: 1em;
+    padding-bottom: 10px;
+    font-size: 14px;
+}
+
+.dynamics_list .dynamic-content p {
+    line-height: 1.2;
+}
