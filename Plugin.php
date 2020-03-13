@@ -25,7 +25,7 @@ class Dynamics_Plugin implements Typecho_Plugin_Interface
 		  PRIMARY KEY (`did`)
 		) DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;');
 
-        return _t('插件已经激活，需先配置插件信息！');
+        return _t('插件已经激活');
     }
 
     // 禁用插件
@@ -41,11 +41,12 @@ class Dynamics_Plugin implements Typecho_Plugin_Interface
      * @access public
      * @param null $pattern
      * @param int $num
+     * @param int $page
      * @return string
      * @throws Typecho_Db_Exception
      * @throws Typecho_Exception
      */
-    public static function output($pattern = NULL, $num = 10)
+    public static function output($pattern = NULL, $num = 10, $page = 1)
     {
         $options = Typecho_Widget::widget('Widget_Options');
         if (!isset($options->plugins['activated']['Dynamics'])) {
@@ -54,7 +55,7 @@ class Dynamics_Plugin implements Typecho_Plugin_Interface
 
         $db = Typecho_Db::get();
         $options = Typecho_Widget::widget('Widget_Options');
-
+        
         $sql = $db->select('table.dynamics.did',
             'table.dynamics.authorId',
             'table.dynamics.text',
@@ -67,14 +68,21 @@ class Dynamics_Plugin implements Typecho_Plugin_Interface
 
         $sql = $sql->order('table.dynamics.created', Typecho_Db::SORT_DESC);
         $num = intval($num);
-        if ($num > 0) {
+        $page = intval($page);
+        /*if ($num > 0) {
             $sql = $sql->limit($num);
+        }*/
+        if (empty($page)){
+        	$page = 1;
+        }
+        if ($num > 0 && $page >=1){
+        	$sql = $sql->page($page,$num);
         }
         $dynamics = $db->fetchAll($sql);
 
         $str = "";
         if (empty($pattern)) {
-            $cssUrl = Typecho_Common::url('/Dynamics/static/dynamic.css', $options->pluginUrl);
+	    $cssUrl = Typecho_Common::url('/Dynamics/static/dynamic.css', $options->pluginUrl);
             $str .= '<link rel="stylesheet" href="' . $cssUrl . '" />';
             $pattern = "
 <li id=\"dynamic-{did}\" class=\"dynamics_list\">
@@ -99,6 +107,7 @@ class Dynamics_Plugin implements Typecho_Plugin_Interface
                 $pattern
             );
         }
+
         return $str;
 
     }
