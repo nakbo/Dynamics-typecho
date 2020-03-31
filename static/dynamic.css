@@ -40,5 +40,36 @@ li.dynamics_list {
 }
 
 .dynamics_list .dynamic-content p {
-    line-height: 1.2;
+    line-height: 1.7;
+}
+
+.dynamics-page-navigator {
+    display: flex;
+    justify-content: center;
+    padding-top: 10px;
+    line-height: 1 !important;
+    font-size: 12px;
+}
+
+.dynamics-page-navigator li {
+    padding: 10px 12px;
+    line-height: 1 !important;
+    list-style: none;
+    background: #fff
+}
+
+.dynamics-page-navigator li:first-of-type {
+    border-radius: 5px 0 0 5px
+}
+
+.dynamics-page-navigator li:last-of-type {
+    border-radius: 0 5px 5px 0
+}
+
+.dynamics-page-navigator .current {
+    background: #4a55ee
+}
+
+.dynamics-page-navigator .current a {
+    color: #fff
 }

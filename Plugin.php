@@ -4,17 +4,19 @@
  * 我的动态 - 南博助手
  * @package Dynamics
  * @author 权那他
- * @version 1.0
+ * @version 1.1
  */
 class Dynamics_Plugin implements Typecho_Plugin_Interface
 {
     // 激活插件
     public static function activate()
     {
-//        Helper::addPanel(3, 'Dynamics/manage/dynamics.php', '我的动态', '我的动态列表', 'administrator');
+        Helper::addPanel(3, 'Dynamics/manage/dynamic.php', '我的动态', '我的动态列表', 'administrator');
 
         $db = Typecho_Db::get();
         $prefix = $db->getPrefix();
+        /** @noinspection SqlResolve */
+        /** @noinspection SqlNoDataSourceInspection */
         $db->query('CREATE TABLE IF NOT EXISTS `' . $prefix . 'dynamics` (
 		  `did` int(11) unsigned NOT NULL AUTO_INCREMENT,
 		  `authorId` int(11) DEFAULT NULL,
@@ -31,7 +33,7 @@ class Dynamics_Plugin implements Typecho_Plugin_Interface
     // 禁用插件
     public static function deactivate()
     {
-//        Helper::removePanel(3, 'Dynamics/manage/dynamics.php');
+        Helper::removePanel(3, 'Dynamics/manage/dynamic.php');
         return _t('插件已被禁用');
     }
 
@@ -41,12 +43,12 @@ class Dynamics_Plugin implements Typecho_Plugin_Interface
      * @access public
      * @param null $pattern
      * @param int $num
-     * @param int $page
      * @return string
      * @throws Typecho_Db_Exception
      * @throws Typecho_Exception
+     * @noinspection PhpUndefinedFieldInspection
      */
-    public static function output($pattern = NULL, $num = 10, $page = 1)
+    public static function output($pattern = NULL, $num = 5)
     {
         $options = Typecho_Widget::widget('Widget_Options');
         if (!isset($options->plugins['activated']['Dynamics'])) {
@@ -55,8 +57,11 @@ class Dynamics_Plugin implements Typecho_Plugin_Interface
 
         $db = Typecho_Db::get();
         $options = Typecho_Widget::widget('Widget_Options');
-        
-        $sql = $db->select('table.dynamics.did',
+        $request = Typecho_Request::getInstance();
+        $page = $request->get('page', 1);
+        $pageSize = intval($num);
+
+        $select = $db->select('table.dynamics.did',
             'table.dynamics.authorId',
             'table.dynamics.text',
             'table.dynamics.status',
@@ -64,25 +69,24 @@ class Dynamics_Plugin implements Typecho_Plugin_Interface
             'table.dynamics.modified',
             'table.users.screenName',
             'table.users.mail')->from('table.dynamics');
-        $sql->join('table.users', 'table.dynamics.authorId = table.users.uid', Typecho_Db::LEFT_JOIN);
+        $select->join('table.users', 'table.dynamics.authorId = table.users.uid', Typecho_Db::LEFT_JOIN);
 
-        $sql = $sql->order('table.dynamics.created', Typecho_Db::SORT_DESC);
-        $num = intval($num);
-        $page = intval($page);
-        /*if ($num > 0) {
-            $sql = $sql->limit($num);
-        }*/
-        if (empty($page)){
-        	$page = 1;
-        }
-        if ($num > 0 && $page >=1){
-        	$sql = $sql->page($page,$num);
-        }
-        $dynamics = $db->fetchAll($sql);
+        $select = $select->order('table.dynamics.created', Typecho_Db::SORT_DESC);
+        $select = $select->page($page, $pageSize);
+        $dynamics = $db->fetchAll($select);
+
+        include_once 'Dynamics_Page.php';
+        $count = $db->select('count(1) AS count')->from('table.dynamics');
+        $count = $db->fetchAll($count)[0]['count'];
+        $pageLayout = new Dynamics_Page($pageSize, $count, $page, 4,
+            array(
+                'status' => 'all'
+            ), false
+        );
 
         $str = "";
         if (empty($pattern)) {
-	    $cssUrl = Typecho_Common::url('/Dynamics/static/dynamic.css', $options->pluginUrl);
+            $cssUrl = Typecho_Common::url('/Dynamics/static/dynamic.css?version=1.1', $options->pluginUrl);
             $str .= '<link rel="stylesheet" href="' . $cssUrl . '" />';
             $pattern = "
 <li id=\"dynamic-{did}\" class=\"dynamics_list\">
@@ -93,9 +97,7 @@ class Dynamics_Plugin implements Typecho_Plugin_Interface
 <div class=\"dynamic-meta\">
 	<a href=\"#\"><time itemprop=\"dynamicTime\" datetime=\"{date}\">{date}</time></a>
 </div>
-<div class=\"dynamic-content\" itemprop=\"commentText\">
-	<p>{text}</p>
-</div>
+<div class=\"dynamic-content\" itemprop=\"commentText\">{text}</div>
 </li>";
         }
 
@@ -103,12 +105,12 @@ class Dynamics_Plugin implements Typecho_Plugin_Interface
             $avatar = "https://gravatar.loli.net/avatar/" . md5($dynamic['mail']);
             $str .= str_replace(
                 array('{did}', '{avatar}', '{authorId}', '{mail}', '{screenName}', '{text}', '{status}', '{created}', '{modified}', '{date}'),
-                array($dynamic['did'], $avatar, $dynamic['authorId'], $dynamic['mail'], $dynamic['screenName'], $dynamic['text'], $dynamic['status'], $dynamic['created'], $dynamic['modified'], date($options->commentDateFormat, $dynamic['created'])),
+                array($dynamic['did'], $avatar, $dynamic['authorId'], $dynamic['mail'], $dynamic['screenName'], Markdown::convert(trim($dynamic['text'])), $dynamic['status'], $dynamic['created'], $dynamic['modified'], date($options->commentDateFormat, $dynamic['created'])),
                 $pattern
             );
         }
 
-        return $str;
+        return $str . "<ol class=\"dynamics-page-navigator\">" . $pageLayout->show() . "</ol>";
 
     }
 
