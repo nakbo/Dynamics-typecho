@@ -33,7 +33,6 @@ li.dynamics_list {
 
 .dynamics_list .dynamic-content {
     word-wrap: break-word;
-    word-break: break-all;
     padding-top: 1em;
     padding-bottom: 10px;
     font-size: 14px;
