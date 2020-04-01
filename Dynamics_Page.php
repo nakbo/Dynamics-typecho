@@ -111,18 +111,15 @@ class Dynamics_Page
             $s = $a[$i];
             if ($s == $this->current_page) {
                 $url = Typecho_Request::getInstance()->getRequestUrl();
-                $str .= '<li class="current"><a href="' . $url . '">' . $s . '</a></li>';
+                $str .= '<li class="current"><a href="javascript:void(0)" onclick="window.location.href=\'' . $url . '\'">' . $s . '</a></li>';
             } else {
                 $url = $this->buildUrl($s);
-                $str .= '<li><a href="' . $url . '">' . $s . '</a></li>';
+                $str .= '<li><a href="javascript:void(0)" onclick="window.location.href=\'' . $url . '\'">' . $s . '</a></li>';
             }
         }
         if ($this->current_page < $this->pageNums) {
-            $lastPageUrl = $this->buildUrl($this->pageNums);
             $nextPageUrl = $this->buildUrl($this->current_page + 1);
-            $str .= '<li><a href="' . $nextPageUrl . '">&raquo;</a></li>';
-        } else {
-            $str .= '';
+            $str .= '<li><a href="javascript:void(0)" onclick="window.location.href=\'' . $nextPageUrl . '\'">&raquo;</a></li>';
         }
         return $str;
     }
@@ -132,16 +129,11 @@ class Dynamics_Page
         if ($this->isAdmin) {
             return Typecho_Common::url('extending.php?' . http_build_query(array_merge($this->otherParams,
                     array(
-                        'page' => $page,
+                        'dynamicsPage' => $page,
                     ))),
                 Typecho_Widget::widget('Widget_Options')->adminUrl);
         } else {
-            return "?" . http_build_query(array_merge($this->otherParams,
-                    array(
-                        'page' => $page,
-                    )));
+            return "?dynamicsPage=" . $page;
         }
     }
-
-
 }

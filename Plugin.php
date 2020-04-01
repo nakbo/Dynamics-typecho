@@ -58,7 +58,7 @@ class Dynamics_Plugin implements Typecho_Plugin_Interface
         $db = Typecho_Db::get();
         $options = Typecho_Widget::widget('Widget_Options');
         $request = Typecho_Request::getInstance();
-        $page = $request->get('page', 1);
+        $page = $request->get('dynamicsPage', 1);
         $pageSize = intval($num);
 
         $select = $db->select('table.dynamics.did',
@@ -79,9 +79,7 @@ class Dynamics_Plugin implements Typecho_Plugin_Interface
         $count = $db->select('count(1) AS count')->from('table.dynamics');
         $count = $db->fetchAll($count)[0]['count'];
         $pageLayout = new Dynamics_Page($pageSize, $count, $page, 4,
-            array(
-                'status' => 'all'
-            ), false
+            array(), false
         );
 
         $str = "";
