@@ -10,9 +10,8 @@ require_once __DIR__ . '/../Dynamics_Page.php';
 $db = Typecho_Db::get();
 $prefix = $db->getPrefix();
 $request = Typecho_Request::getInstance();
-$pagenum = $request->get('dynamicsPage', 1);
+$pagenum = $request->get('page', 1);
 $filter = $request->get('filter', 'all');
-$pageSize = 10;
 
 $query = $db->select('table.dynamics.did',
     'table.dynamics.authorId',
@@ -24,7 +23,7 @@ $query = $db->select('table.dynamics.did',
     'table.users.mail')->from('table.dynamics');
 $query->join('table.users', 'table.dynamics.authorId = table.users.uid', Typecho_Db::LEFT_JOIN);
 $query = $query->order('created', Typecho_Db::SORT_DESC);
-$query = $query->page($pagenum, $pageSize);
+$query = $query->page($pagenum, 10);
 $rowGoods = $db->fetchAll($query);
 
 $filterOptions = $request->get($filter);
@@ -33,7 +32,7 @@ $filterArr = array(
     $filter => $filterOptions
 );
 $count = $db->select('count(1) AS count')->from('table.dynamics');
-$page = new Dynamics_Page($pageSize, $db->fetchAll($count)[0]['count'], $pagenum, 10,
+$page = new Dynamics_Page(10, $db->fetchAll($count)[0]['count'], $pagenum, 10,
     array_merge($filterArr, array(
         'panel' => 'Dynamics/manage/dynamic.php',
         'status' => 'all'
@@ -46,11 +45,11 @@ $page = new Dynamics_Page($pageSize, $db->fetchAll($count)[0]['count'], $pagenum
         <?php include 'page-title.php'; ?>
         <div class="row typecho-page-main" role="main">
 
-            <!--            <div class="col-mb-12">-->
-            <!--                <ul class="typecho-option-tabs fix-tabs clearfix">-->
-            <!--                    <li class="current"><a href="#">动态列表</a></li>-->
-            <!--                </ul>-->
-            <!--            </div>-->
+<!--            <div class="col-mb-12">-->
+<!--                <ul class="typecho-option-tabs fix-tabs clearfix">-->
+<!--                    <li class="current"><a href="#">动态列表</a></li>-->
+<!--                </ul>-->
+<!--            </div>-->
 
             <div class="col-mb-12 typecho-list">
 
