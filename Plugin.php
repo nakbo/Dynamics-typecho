@@ -43,12 +43,14 @@ class Dynamics_Plugin implements Typecho_Plugin_Interface
      * @access public
      * @param null $pattern
      * @param int $num
+     * @param bool $isPgae
+     * @param string $dateFormat
      * @return string
      * @throws Typecho_Db_Exception
      * @throws Typecho_Exception
      * @noinspection PhpUndefinedFieldInspection
      */
-    public static function output($pattern = NULL, $num = 5)
+    public static function output($pattern = NULL, $num = 5,$isPgae = true,$dateFormat = "Y-m-d H:i:s")
     {
         $options = Typecho_Widget::widget('Widget_Options');
         if (!isset($options->plugins['activated']['Dynamics'])) {
@@ -58,7 +60,7 @@ class Dynamics_Plugin implements Typecho_Plugin_Interface
         $db = Typecho_Db::get();
         $options = Typecho_Widget::widget('Widget_Options');
         $request = Typecho_Request::getInstance();
-        $page = $request->get('dynamicsPage', 1);
+        $page = $request->get('page', 1);
         $pageSize = intval($num);
 
         $select = $db->select('table.dynamics.did',
@@ -79,7 +81,9 @@ class Dynamics_Plugin implements Typecho_Plugin_Interface
         $count = $db->select('count(1) AS count')->from('table.dynamics');
         $count = $db->fetchAll($count)[0]['count'];
         $pageLayout = new Dynamics_Page($pageSize, $count, $page, 4,
-            array(), false
+            array(
+                'status' => 'all'
+            ), false
         );
 
         $str = "";
@@ -98,17 +102,22 @@ class Dynamics_Plugin implements Typecho_Plugin_Interface
 <div class=\"dynamic-content\" itemprop=\"commentText\">{text}</div>
 </li>";
         }
-
+        
+        //采用官方默认日期或者自定义
+        $formatDate = empty($dateFormat) ? $options->commentDateFormat : $dateFormat;
         foreach ($dynamics as $dynamic) {
             $avatar = "https://gravatar.loli.net/avatar/" . md5($dynamic['mail']);
             $str .= str_replace(
                 array('{did}', '{avatar}', '{authorId}', '{mail}', '{screenName}', '{text}', '{status}', '{created}', '{modified}', '{date}'),
-                array($dynamic['did'], $avatar, $dynamic['authorId'], $dynamic['mail'], $dynamic['screenName'], Markdown::convert(trim($dynamic['text'])), $dynamic['status'], $dynamic['created'], $dynamic['modified'], date($options->commentDateFormat, $dynamic['created'])),
+                array($dynamic['did'], $avatar, $dynamic['authorId'], $dynamic['mail'], $dynamic['screenName'], Markdown::convert(trim($dynamic['text'])), $dynamic['status'], $dynamic['created'], $dynamic['modified'], date($formatDate, $dynamic['created'])),
                 $pattern
             );
         }
+        
+        //是否输出分页
+        $pageHtml = $isPgae ? $str . "<ol class=\"dynamics-page-navigator\">" . $pageLayout->show() . "</ol>" : $str;
 
-        return $str . "<ol class=\"dynamics-page-navigator\">" . $pageLayout->show() . "</ol>";
+        return $pageHtml;
 
     }
 
