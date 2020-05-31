@@ -1,17 +1,22 @@
 <?php
+include_once 'Dynamics.php';
 
 /**
  * 我的动态 - 南博助手
  * @package Dynamics
  * @author 权那他
- * @version 1.1
+ * @version 1.2
  */
 class Dynamics_Plugin implements Typecho_Plugin_Interface
 {
+
+    private static $dynamicInstance;
+
     // 激活插件
     public static function activate()
     {
-        Helper::addPanel(3, 'Dynamics/manage/dynamic.php', '我的动态', '我的动态列表', 'administrator');
+        Helper::addPanel(3, 'Dynamics/manage-dynamics.php', '我的动态', '我的动态列表', 'administrator');
+        Helper::addAction('dynamics-manage', 'Dynamics_Action');
 
         $db = Typecho_Db::get();
         $prefix = $db->getPrefix();
@@ -33,7 +38,8 @@ class Dynamics_Plugin implements Typecho_Plugin_Interface
     // 禁用插件
     public static function deactivate()
     {
-        Helper::removePanel(3, 'Dynamics/manage/dynamic.php');
+        Helper::removePanel(3, 'Dynamics/manage-dynamics.php');
+        Helper::removeAction('dynamics-manage');
         return _t('插件已被禁用');
     }
 
@@ -43,73 +49,57 @@ class Dynamics_Plugin implements Typecho_Plugin_Interface
      * @access public
      * @param null $pattern
      * @param int $num
-     * @return string
-     * @throws Typecho_Db_Exception
      * @throws Typecho_Exception
-     * @noinspection PhpUndefinedFieldInspection
+     * @throws Typecho_Widget_Exception
      */
     public static function output($pattern = NULL, $num = 5)
     {
         $options = Typecho_Widget::widget('Widget_Options');
-        if (!isset($options->plugins['activated']['Dynamics'])) {
-            return '我的动态插件未激活';
-        }
+        $cssUrl = Typecho_Common::url('/Dynamics/static/dynamic.css?version=1.1', $options->pluginUrl);
+        echo '<link rel="stylesheet" href="' . $cssUrl . '" />';
 
-        $db = Typecho_Db::get();
-        $options = Typecho_Widget::widget('Widget_Options');
-        $request = Typecho_Request::getInstance();
-        $page = $request->get('dynamicsPage', 1);
-        $pageSize = intval($num);
+        $dynamics = Dynamics_Plugin::get(array(
+            "pageSize" => $num
+        ));
+        ?>
 
-        $select = $db->select('table.dynamics.did',
-            'table.dynamics.authorId',
-            'table.dynamics.text',
-            'table.dynamics.status',
-            'table.dynamics.created',
-            'table.dynamics.modified',
-            'table.users.screenName',
-            'table.users.mail')->from('table.dynamics');
-        $select->join('table.users', 'table.dynamics.authorId = table.users.uid', Typecho_Db::LEFT_JOIN);
+        <?php while ($dynamics->next()) : ?>
+        <li id="<?php $dynamics->did() ?>>" class="dynamics_list">
+            <div class="dynamic-author" itemprop="creator" itemscope="" itemtype="http://schema.org/Person">
+                <span itemprop="image"><img class="avatar" src="<?php $dynamics->avatar() ?>"
+                                            alt="<?php $dynamics->authorName() ?>" width="3" height="32"></span>
+                <cite class="fn" itemprop="name"><?php $dynamics->authorName() ?></cite>
+            </div>
+            <div class="dynamic-meta">
+                <a href="#">
+                    <time itemprop="dynamicTime" datetime="{date}"><?php $dynamics->created() ?></time>
+                </a>
+            </div>
+            <div class="dynamic-content" itemprop="commentText"><?php $dynamics->contents() ?></div>
+        </li>
+    <?php endwhile; ?>
 
-        $select = $select->order('table.dynamics.created', Typecho_Db::SORT_DESC);
-        $select = $select->page($page, $pageSize);
-        $dynamics = $db->fetchAll($select);
+        <?php $dynamics->navigator() ?>
 
-        include_once 'Dynamics_Page.php';
-        $count = $db->select('count(1) AS count')->from('table.dynamics');
-        $count = $db->fetchAll($count)[0]['count'];
-        $pageLayout = new Dynamics_Page($pageSize, $count, $page, 4,
-            array(), false
+        <?php
+    }
+
+    public static function get($params = array())
+    {
+        $dynamics = new Dynamics(
+            Typecho_Request::getInstance(),
+            Typecho_Response::getInstance()
         );
+        $dynamics->parse($params);
+        return $dynamics;
+    }
 
-        $str = "";
-        if (empty($pattern)) {
-            $cssUrl = Typecho_Common::url('/Dynamics/static/dynamic.css?version=1.1', $options->pluginUrl);
-            $str .= '<link rel="stylesheet" href="' . $cssUrl . '" />';
-            $pattern = "
-<li id=\"dynamic-{did}\" class=\"dynamics_list\">
-<div class=\"dynamic-author\" itemprop=\"creator\" itemscope=\"\" itemtype=\"http://schema.org/Person\">
-	<span itemprop=\"image\"><img class=\"avatar\" src=\"{avatar}\" alt=\"{name}\" width=\"32\" height=\"32\"></span>
-	<cite class=\"fn\" itemprop=\"name\">{screenName}</cite>
-</div>
-<div class=\"dynamic-meta\">
-	<a href=\"#\"><time itemprop=\"dynamicTime\" datetime=\"{date}\">{date}</time></a>
-</div>
-<div class=\"dynamic-content\" itemprop=\"commentText\">{text}</div>
-</li>";
+    public static function getInstance($params = array())
+    {
+        if (self::$dynamicInstance == null) {
+            self::$dynamicInstance = self::get($params);
         }
-
-        foreach ($dynamics as $dynamic) {
-            $avatar = "https://gravatar.loli.net/avatar/" . md5($dynamic['mail']);
-            $str .= str_replace(
-                array('{did}', '{avatar}', '{authorId}', '{mail}', '{screenName}', '{text}', '{status}', '{created}', '{modified}', '{date}'),
-                array($dynamic['did'], $avatar, $dynamic['authorId'], $dynamic['mail'], $dynamic['screenName'], Markdown::convert(trim($dynamic['text'])), $dynamic['status'], $dynamic['created'], $dynamic['modified'], date($options->commentDateFormat, $dynamic['created'])),
-                $pattern
-            );
-        }
-
-        return $str . "<ol class=\"dynamics-page-navigator\">" . $pageLayout->show() . "</ol>";
-
+        return self::$dynamicInstance;
     }
 
 
