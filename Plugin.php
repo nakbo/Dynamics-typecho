@@ -67,7 +67,7 @@ class Dynamics_Plugin implements Typecho_Plugin_Interface
         <li id="<?php $dynamics->did() ?>>" class="dynamics_list">
             <div class="dynamic-author" itemprop="creator" itemscope="" itemtype="http://schema.org/Person">
                 <span itemprop="image"><img class="avatar" src="<?php $dynamics->avatar() ?>"
-                                            alt="<?php $dynamics->authorName() ?>" width="3" height="32"></span>
+                                            alt="<?php $dynamics->authorName() ?>" width="32" height="32"></span>
                 <cite class="fn" itemprop="name"><?php $dynamics->authorName() ?></cite>
             </div>
             <div class="dynamic-meta">
