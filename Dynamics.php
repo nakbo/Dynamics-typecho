@@ -16,7 +16,7 @@ class Dynamics extends Dynamics_Abstract
     public function parse($params = array())
     {
         $page = $this->request->get('dynamicsPage', 1);
-        $pageSize = $params["pageSize"] ?: 10;
+        $pageSize = $params["pageSize"] ?: 5;
 
         $select = $this->db->select('table.dynamics.did',
             'table.dynamics.authorId',
@@ -34,7 +34,7 @@ class Dynamics extends Dynamics_Abstract
         $count = $this->db->select('count(1) AS count')->from('table.dynamics');
         $count = $this->db->fetchAll($count)[0]['count'];
         $this->pageNavigator = new Dynamics_Page($pageSize, $count, $page, 4,
-            array(), false
+            array(), false, $params["isPjax"] ?: false
         );
         $this->_have = count($this->_dynamics_list) > 0;
         $this->_position = 0;
@@ -62,9 +62,10 @@ class Dynamics extends Dynamics_Abstract
     }
 
     /**
+     * 当前页面位置
      * @return int
      */
-    public function getCurrent()
+    public function current()
     {
         return $this->_position + 1;
     }

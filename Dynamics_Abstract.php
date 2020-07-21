@@ -2,7 +2,7 @@
 
 class Dynamics_Abstract extends Widget_Abstract_Contents implements Widget_Interface_Do
 {
-    private $_did;
+    public $visualAble;
     public $did;
     public $authorId;
     public $authorName;
@@ -12,6 +12,7 @@ class Dynamics_Abstract extends Widget_Abstract_Contents implements Widget_Inter
     public $created;
     public $modified;
     public $status;
+    public $url;
 
     public function authorId()
     {
@@ -24,6 +25,12 @@ class Dynamics_Abstract extends Widget_Abstract_Contents implements Widget_Inter
     public function setAuthorId($authorId)
     {
         $this->authorId = $authorId;
+        try {
+            $hasLogin = $this->user->pass("administrator", true);
+        } catch (Exception $e) {
+            $hasLogin = false;
+        }
+        $this->visualAble = $hasLogin ? true : ($this->status == "private" ? false : true);
     }
 
     public function authorName()
@@ -52,9 +59,9 @@ class Dynamics_Abstract extends Widget_Abstract_Contents implements Widget_Inter
         $this->mail = $mail;
     }
 
-    public function avatar()
+    public function avatar($size = 200, $rating = 'X', $default = 'mm')
     {
-        echo "https://gravatar.loli.net/avatar/" . md5($this->mail);
+        echo Typecho_Common::gravatarUrl($this->mail, $size, $rating, $default, $this->request->isSecure());
     }
 
     public function did()
@@ -68,6 +75,7 @@ class Dynamics_Abstract extends Widget_Abstract_Contents implements Widget_Inter
     public function setDid($did)
     {
         $this->did = $did;
+        $this->url = Dynamics_Plugin::applyUrl($did, true);
     }
 
     public function text()
@@ -81,15 +89,15 @@ class Dynamics_Abstract extends Widget_Abstract_Contents implements Widget_Inter
     public function setText($text)
     {
         $this->text = $text;
+        $this->setContent($this->visualAble ? Markdown::convert(trim($this->text)) : "");
     }
 
     /**
-     * @throws Typecho_Widget_Exception
+     * @param string $privateTemplate 私密模板
      */
-    public function contents()
+    public function content($privateTemplate = "这是一条私密动态")
     {
-        $this->setContent(Markdown::convert(trim($this->text)));
-        echo $this->user->pass("administrator", true) ? $this->content : ($this->status == "private" ? "这是一条私密动态" : $this->content);
+        echo $this->visualAble ? $this->content : $privateTemplate;
     }
 
     /**
@@ -140,6 +148,11 @@ class Dynamics_Abstract extends Widget_Abstract_Contents implements Widget_Inter
     public function setStatus($status)
     {
         $this->status = $status;
+    }
+
+    public function url()
+    {
+        echo $this->url;
     }
 
     /**

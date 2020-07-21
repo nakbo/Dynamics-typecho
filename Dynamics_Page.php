@@ -13,6 +13,7 @@ class Dynamics_Page
     private $page_array = array(); //用来构造分页的数组
     private $otherParams = array();
     private $isAdmin;
+    private $isPjax;
 
     /**
      *
@@ -33,8 +34,9 @@ class Dynamics_Page
      * @param $sub_pages
      * @param $otherParams
      * @param bool $isAdmin
+     * @param $isPjax
      */
-    public function __construct($each_disNums, $nums, $current_page, $sub_pages, $otherParams, $isAdmin = true)
+    public function __construct($each_disNums, $nums, $current_page, $sub_pages, $otherParams, $isAdmin = true, $isPjax = false)
     {
         $this->each_disNums = intval($each_disNums);
         $this->nums = intval($nums);
@@ -47,6 +49,7 @@ class Dynamics_Page
         $this->pageNums = ceil($nums / $each_disNums);
         $this->otherParams = $otherParams;
         $this->isAdmin = $isAdmin;
+        $this->isPjax = $isPjax;
 
     }
 
@@ -99,27 +102,46 @@ class Dynamics_Page
     {
         $str = "";
         if ($this->current_page > 1) {
-            $firstPageUrl = $this->buildUrl(1);
             $prevPageUrl = $this->buildUrl($this->current_page - 1);
-            $str .= '<li><a href="' . $prevPageUrl . '">&laquo;</a></li>';
+            if ($this->isPjax) {
+                $str .= '<li><a href="' . $prevPageUrl . '">&laquo;</a></li>';
+            } else {
+                $str .= '<li><a href="javascript:void(0)" onclick="window.location.href=\'' . $prevPageUrl . '\'">&laquo;</a></li>';
+            }
         } else {
             $str .= '';
         }
         $a = $this->construct_num_Page();
 
+        if (count($a) == 1) {
+            return "";
+        }
+
         for ($i = 0; $i < count($a); $i++) {
             $s = $a[$i];
             if ($s == $this->current_page) {
                 $url = Typecho_Request::getInstance()->getRequestUrl();
-                $str .= '<li class="current"><a href="javascript:void(0)" onclick="window.location.href=\'' . $url . '\'">' . $s . '</a></li>';
+                if ($this->isPjax) {
+                    $str .= '<li class="current"><a href="' . $url . '">' . $s . '</a></li>';
+                } else {
+                    $str .= '<li class="current"><a href="javascript:void(0)" onclick="window.location.href=\'' . $url . '\'">' . $s . '</a></li>';
+                }
             } else {
                 $url = $this->buildUrl($s);
-                $str .= '<li><a href="javascript:void(0)" onclick="window.location.href=\'' . $url . '\'">' . $s . '</a></li>';
+                if ($this->isPjax) {
+                    $str .= '<li><a href="' . $url . '">' . $s . '</a></li>';
+                } else {
+                    $str .= '<li><a href="javascript:void(0)" onclick="window.location.href=\'' . $url . '\'">' . $s . '</a></li>';
+                }
             }
         }
         if ($this->current_page < $this->pageNums) {
             $nextPageUrl = $this->buildUrl($this->current_page + 1);
-            $str .= '<li><a href="javascript:void(0)" onclick="window.location.href=\'' . $nextPageUrl . '\'">&raquo;</a></li>';
+            if ($this->isPjax) {
+                $str .= '<li><a href="' . $nextPageUrl . '">&raquo;</a></li>';
+            } else {
+                $str .= '<li><a href="javascript:void(0)" onclick="window.location.href=\'' . $nextPageUrl . '\'">&raquo;</a></li>';
+            }
         }
         return $str;
     }
@@ -133,7 +155,12 @@ class Dynamics_Page
                     ))),
                 Typecho_Widget::widget('Widget_Options')->adminUrl);
         } else {
-            return "?dynamicsPage=" . $page;
+            return $this->currentUrl() . "?dynamicsPage=" . $page;
         }
+    }
+
+    private function currentUrl()
+    {
+        return str_replace("?" . $_SERVER["QUERY_STRING"], "", Typecho_Request::getInstance()->getRequestUrl());
     }
 }

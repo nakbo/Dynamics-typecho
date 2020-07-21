@@ -34,7 +34,7 @@ include 'menu.php';
         /*border-top: 1px #e4dad1 solid; */
         border-bottom: 1px #e4dad1 solid;
         padding: 10px 10px 10px 10px;
-        font-size: 18px;
+        font-size: 14px;
         background-color: #fff;
         cursor: pointer;
     }
@@ -57,7 +57,7 @@ include 'menu.php';
         color: #827C7C;
     }
 
-    .dynamic-list-item div.subtitle .time {
+    .dynamic-list-item div.subtitle .author {
         float: right;
     }
 
@@ -94,12 +94,29 @@ include 'menu.php';
     .dynamic-right .save {
         display: none;
     }
+
+    #dynamic-btn-box {
+        float: right;
+        margin-top: 20px;
+    }
+
 </style>
 
 <div class="main">
     <div class="body container">
         <?php include 'page-title.php'; ?>
         <div class="row typecho-page-main" role="main">
+
+            <div class="col-mb-12">
+                <ul class="typecho-option-tabs fix-tabs clearfix">
+                    <li class="current"><a href="#">我的动态</a></li>
+                    <li><a href="<?php Dynamics_Plugin::homeUrl(); ?>" target="_blank">动态首页</a></li>
+                    <li>
+                        <a href="<?php echo Helper::options()->adminUrl . 'options-plugin.php?config=Dynamics'; ?>">设置</a>
+                    </li>
+                </ul>
+            </div>
+
             <div class="col-mb-12 typecho-list">
                 <div class="dynamic-row row">
 
@@ -119,24 +136,21 @@ include 'menu.php';
                     </div>
                     <div></div>
                     <div class="col-mb-8 dynamic-right">
-                        <div>
-                            <button id="dynamic-adds" class="add btn">发布新动态</button>
-                            <button class="delete btn">删除动态</button>
-                        </div>
-                        <br/>
-                        <div>
-                            <input class="title" type="text" placeholder="请输入标题">
-                        </div>
                         <p>
                             <label for="text" class="sr-only"><?php _e('文章内容'); ?></label>
                             <textarea placeholder="请输入正文" style="height: <?php $options->editorSize(); ?>px"
                                       autocomplete="off" id="text" name="text" class="w-100 mono"></textarea>
                         </p>
-                        <div>
-                            <button class="save btn primary ">保存动态</button>
-                        </div>
                     </div>
                 </div>
+
+                <div id="dynamic-btn-box">
+                    <button type="submit" name="do" value="adds" class="adds btn">新建动态</button>
+                    <button type="submit" name="do" value="delete" class="delete btn">删除此动态</button>
+                    <button type="submit" name="do" value="publish" class="save btn primary" id="btn-submit">保存动态
+                    </button>
+                </div>
+
             </div>
         </div>
     </div>
@@ -152,6 +166,7 @@ include 'footer.php';
 <script src="<?php $options->adminStaticUrl('js', 'pagedown.js?v=' . $suffixVersion); ?>"></script>
 <script src="<?php $options->adminStaticUrl('js', 'pagedown-extra.js?v=' . $suffixVersion); ?>"></script>
 <script src="<?php $options->adminStaticUrl('js', 'diff.js?v=' . $suffixVersion); ?>"></script>
+
 <script>
     $(document).ready(function () {
         var textarea = $('#text'),
@@ -211,35 +226,6 @@ include 'footer.php';
             mark = '@mark' + Math.ceil(Math.random() * 100000000) + '@',
             span = '<span class="diff" />',
             cache = {};
-
-        function subStringTitle(str) {
-            return subString(str, 24, true);
-        }
-
-        function subString(str, len, hasDot) {
-            var newLength = 0;
-            var newStr = "";
-            var chineseRegex = /[^\x00-\xff]/g;
-            var singleChar = "";
-            var strLength = str.replace(chineseRegex, "**").length;
-            for (var i = 0; i < strLength; i++) {
-                singleChar = str.charAt(i).toString();
-                if (singleChar.match(chineseRegex) != null) {
-                    newLength += 2;
-                } else {
-                    newLength++;
-                }
-                if (newLength > len) {
-                    break;
-                }
-                newStr += singleChar;
-            }
-
-            if (hasDot && strLength > len) {
-                newStr += "...";
-            }
-            return newStr;
-        }
 
         Markdown.Extra.init(converter, {
             'extensions': ["tables", "fenced_code_gfm", "def_list", "attr_list", "footnotes", "strikethrough", "newlines"]
@@ -472,15 +458,13 @@ include 'footer.php';
                     selected_el = $(selected_tab).removeClass("wmd-hidetab");
 
                 // 预览时隐藏编辑器按钮
-                if (selected_tab == "#wmd-preview") {
-                    $('.dynamic-right .title').hide();
-                    $('.dynamic-right .save').hide();
-
+                if (selected_tab === "#wmd-preview") {
+                    $('#dynamic-btn-box .save').hide();
+                    $("#dynamic-btn-box .delete").hide();
                     $("#wmd-button-row").addClass("wmd-visualhide");
                 } else {
-                    $('.dynamic-right .title').show();
-                    $('.dynamic-right .save').show();
-
+                    $('#dynamic-btn-box .save').show();
+                    $('#dynamic-btn-box .delete').show();
                     $("#wmd-button-row").removeClass("wmd-visualhide");
                 }
 
@@ -498,36 +482,32 @@ include 'footer.php';
         $(document).on('click', '.dynamic-list .dynamic-list-item', function () {
             $('.dynamic-list .dynamic-list-item').each(function (k, ele) {
                 $(ele).removeClass('active');
-            })
+            });
             $(this).addClass('active');
 
             var note = notedata['key_' + $(this).attr("data-id")];
 
-
             selectId = $(this).attr("data-id");
 
-            // console.log(note);
-
             $('#text').val(note.text);
-            $('.dynamic-right .title').val(subStringTitle(note.text));
 
             editor.refreshPreview();
 
             $('.dynamic-right').show();
             // $('.dynamic-right').html($(this).attr("data-id"));
-        })
+        });
 
-        $(document).on('click', '#dynamic-adds', function () {
+        $(document).on('click', '#dynamic-btn-box .adds', function () {
             $.get('/action/dynamics-manage?do=adds', {}, function (data) {
                 if (data.result) {
                     notedata['key_' + data.data.did] = data.data;
 
                     var note_item_tpl =
                         '<div class="dynamic-list-item" data-id="' + data.data.did + '">' +
-                        '<div class="title">' + subStringTitle(data.data.text) + '</div>' +
+                        '<div class="title">' + data.data.title + '<a href="' + data.data.url + '" target="_blank"><i class="i-exlink"></i></a></div>' +
                         '<div class="subtitle">' +
+                        '<span class="desc">' + data.data.desc + '</span>' +
                         '<span class="author">' + data.data.author_name + '</span>' +
-                        '<span class="time">' + data.data.created + '</span>' +
                         '</div>' +
                         '</div>';
                     note_item_tpl = $(note_item_tpl);
@@ -539,14 +519,14 @@ include 'footer.php';
                     alert(data.message);
                 }
             })
-        })
+        });
 
         $(document).on('click', '.dynamic-list .dynamic-loadmore', function () {
             $('.dynamic-left .dynamic-loadmore .loading').show();
             loadDynamics();
-        })
+        });
 
-        $(document).on('click', '.dynamic-right .save', function () {
+        $(document).on('click', '#dynamic-btn-box .save', function () {
             if (selectId) {
                 $.get('/action/dynamics-manage?do=saves', {
                     did: selectId,
@@ -555,20 +535,16 @@ include 'footer.php';
                 }, function (data) {
                     if (data.result) {
                         notedata['key_' + data.data.did] = data.data;
-
                         var list_item = $('.dynamic-body .dynamic-list-item[data-id="' + data.data.did + '"]');
-
-                        list_item.find('.title').html(subStringTitle(data.data.text));
-                        list_item.find('.subtitle .author').html(data.data.author_name);
-                        list_item.find('.subtitle .time').html(data.data.created);
+                        list_item.find('.subtitle .desc').html(data.data.desc);
                     } else {
                         alert(data.message);
                     }
                 })
             }
-        })
+        });
 
-        $(document).on('click', '.dynamic-right .delete', function () {
+        $(document).on('click', '#dynamic-btn-box .delete', function () {
             if (confirm('确定删除该动态')) {
                 if (selectId) {
                     $.get('/action/dynamics-manage?do=deletes', {
@@ -576,12 +552,10 @@ include 'footer.php';
                     }, function (data) {
                         if (data.result) {
                             delete notedata['key_' + selectId];
-
                             var list_item = $('.dynamic-body .dynamic-list-item[data-id="' + selectId + '"]');
-
-                            if (list_item.prev().length != 0) {
+                            if (list_item.prev().length !== 0) {
                                 list_item.prev().click();
-                            } else if (list_item.next().length != 0) {
+                            } else if (list_item.next().length !== 0) {
                                 list_item.next().click();
                             } else {
                                 $('.dynamic-right').hide();
@@ -593,8 +567,7 @@ include 'footer.php';
                     })
                 }
             }
-        })
-
+        });
 
         var lastdid = 0;
         var selectId = 0;
@@ -606,7 +579,7 @@ include 'footer.php';
             }, function (data) {
                 if (data.result) {
                     var len = data.data.length;
-                    if (len == 0) {
+                    if (len === 0) {
                         // return;
                         $('.dynamic-left .dynamic-loadmore').hide();
                         $('.dynamic-left .dynamic-nomore').show();
@@ -617,10 +590,10 @@ include 'footer.php';
                             notedata['key_' + data.data[i].did] = data.data[i];
                             note_item_tpl +=
                                 '<div class="dynamic-list-item" data-id="' + data.data[i].did + '">' +
-                                '<div class="title">' + subStringTitle(data.data[i].text) + '</div>' +
+                                '<div class="title">' + data.data[i].title + '<a href="' + data.data[i].url + '" target="_blank"><i class="i-exlink"></i></a></div>' +
                                 '<div class="subtitle">' +
+                                '<span class="desc">' + data.data[i].desc + '</span>' +
                                 '<span class="author">' + data.data[i].author_name + '</span>' +
-                                '<span class="time">' + data.data[i].created + '</span>' +
                                 '</div>' +
                                 '</div>'
                         }
