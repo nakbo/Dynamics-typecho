@@ -94,10 +94,10 @@ class Dynamics_Action extends Typecho_Widget implements Widget_Interface_Do
             Typecho_Response::getInstance()
         );
         $dynamic->setDid($dic['did']);
+        $dynamic->setStatus($dic['status']);
         $dynamic->setAuthorId($dic['authorId']);
         $dynamic->setMail($dic['mail']);
         $dynamic->setAuthorName($dic['screenName']);
-        $dynamic->setStatus($dic['status']);
         $dynamic->setText($dic['text']);
         $dynamic->setCreated($dic['created']);
         $dynamic->setModified($dic['modified']);

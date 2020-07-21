@@ -1,4 +1,5 @@
 <?php
+/** @noinspection DuplicatedCode */
 include_once 'Dynamics_Abstract.php';
 include_once 'Dynamics_Page.php';
 
@@ -46,10 +47,10 @@ class Dynamics extends Dynamics_Abstract
         if ($this->_have) {
             $dic = $this->_dynamics_list[$this->_position];
             $this->setDid($dic['did']);
+            $this->setStatus($dic['status']);
             $this->setAuthorId($dic['authorId']);
             $this->setMail($dic['mail']);
             $this->setAuthorName($dic['screenName']);
-            $this->setStatus($dic['status']);
             $this->setText($dic['text']);
             $this->setCreated($dic['created']);
             $this->setModified($dic['modified']);
