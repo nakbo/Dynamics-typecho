@@ -7,7 +7,7 @@ if (!defined('__TYPECHO_ROOT_DIR__')) exit;
 
     </div><!-- end .container -->
 <footer>
-    &copy; <?php echo date('Y') .' <a href="'.$this->options->siteUrl.'">'. $this->options->title.'</a>'; ?>
+    &copy; <?php echo date('Y') .' <a href="'.$this->options->siteUrl.'" target="_blank">'. $this->options->title.'</a>'; ?>
     <br>
     Powered by <a href="http://typecho.org" target="_blank">Typecho</a> && <a href="https://github.com/kraity/Dynamics" target="_blank">Nabo Dynamics</a>
 </footer>
