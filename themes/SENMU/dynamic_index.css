@@ -1,0 +1,173 @@
+body {
+    margin: 0;
+    font-family: "MI Lan Pro", -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'Helvetica Neue', Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol';
+    background: #fff;
+}
+.nabo-dynamics .dynamic-content {
+    background-color: #f4f6fb;
+    padding: .5rem .75rem;
+    border-radius: 20px;
+}
+.nabo-dynamics .dynamic-content,
+.nabo-dynamics .dynamic-content p{
+    font-size: 0.875rem;
+    color: #969fb7;
+    font-weight: 400;
+    line-height: 1.5;
+    margin: 15px 0;
+}
+.nabo-dynamics .dynamic-content img {
+    max-width: 100%;
+    height: auto;
+    margin: 0 auto;
+    display: block;
+    max-height: 200px;
+    margin: 0;
+}
+.nabo-dynamics .dynamic-content a {
+    display: inline-block;
+}
+.nabo-dynamics .dynamic-meta {
+    margin: 5px 0 15px 0;
+    font-size: 0.75rem;
+    color: #969fb7;
+}
+.nabo-dynamics .dynamic-meta a{
+    color: #969fb7;
+    text-decoration: none;
+}
+
+.dynamics-page-navigator {
+	list-style: none;
+	margin: 25px 0;
+	padding: 0;
+	text-align: center;
+}
+
+.dynamics-page-navigator li {
+	display: inline-block;
+	margin: 0 4px;
+}
+
+.dynamics-page-navigator a {
+	display: inline-block;
+	padding: 0 10px;
+	height: 30px;
+	line-height: 30px;
+	color: rgba(0, 0, 0, 0.5);
+	text-decoration: none;
+}
+
+.dynamics-page-navigator a:hover {
+	background: #EEE;
+	text-decoration: none;
+}
+
+.dynamics-page-navigator .current a {
+	color: rgba(0, 0, 0, 0.5);
+	background: #EEE;
+}
+.dynamics-page-navigator .next{
+	border: 0px;
+}
+.dynamics-page-navigator .next:hover{
+	border: 0px;
+}
+.dynamics-page-navigator .prev{
+	border: 0px;
+}
+.dynamics-page-navigator .prev:hover{
+	border: 0px;
+}
+
+
+.container{
+    max-width: 960px;
+    margin-right: auto;
+    margin-left: auto;
+    padding: 0 20px;
+    min-height: calc(100vh - 100px);
+}
+.miui-style {
+    color: #4e4e4e;
+    font-weight: 300;
+    font-size: 2em;
+    display: block;
+    margin: 30px 0 20px 0;
+}
+figure{
+    margin: 0;
+}
+footer {
+    font-size: 12px;
+    color: #969fb7;
+    text-align: center;
+    margin: 20px 0;
+    line-height: 1.5;
+}
+footer a {
+    color: #969fb7;
+    text-decoration: none;
+}
+.nav {
+    font-size: 12px;
+    color: #969fb7;
+    text-align: right;
+    padding-top: 10px;
+}
+.nav a{
+    color: #969fb7;
+    text-decoration: none;
+}
+@media (prefers-color-scheme: dark) {
+    body{
+        background: #fff;
+    }
+    .miui-style {
+        color: #000;
+    }
+    .nav a {
+        color: #696e81;
+    }
+    .nabo-dynamics .dynamic-content {
+        background-color: #efefef;
+    }
+    .nabo-dynamics .dynamic-content,
+    .nabo-dynamics .dynamic-content p,
+    .nabo-dynamics .dynamic-meta,
+    .nabo-dynamics .dynamic-meta a,
+    footer,
+    footer a{
+        color: #000000;
+       
+        
+    }
+    .dynamics-page-navigator a{
+        color: #595959;
+    }
+    .dynamics-page-navigator .current a,
+    .dynamics-page-navigator a:hover{
+        background: #ff97a4;
+        color: #fff;
+        border-radius:25px;
+    }
+
+}
+
+
+hr {
+    border: 0;
+    height: 1px;
+    background: #ff00aa;
+    background-image: linear-gradient(to right, #ff5268, #bd081d, #ff5268);
+}
+
+.smzimg{
+    width: 2.50rem;
+    height:2.50rem;
+    float: left;
+    border-radius: 50%;
+    margin-right: .7525rem;
+    border: 1px solid #e1dfdf;
+    padding: .115rem;
+}
