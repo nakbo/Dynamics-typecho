@@ -19,6 +19,35 @@ if (!defined('__TYPECHO_ROOT_DIR__')) exit;
 // $this->options->siteUrl();  这些方法依然可以调用
 // $this->options->themeUrl();
 
+// 动态首页
+//$this->homeUrl();
+
+// 注意有括号()，是echo，没有括号的调用return
+//$this->dynamics->did(); //  动态的did
+//$this->dynamics->did 也可以这样调用
+//$this->dynamics->avatar(); // 作者的头像，支持参数 $this->dynamics->avatar(32);   $this->dynamics->avatar(32,'X','mm');
+//$this->dynamics->avatar 也可以这样调用
+//$this->dynamics->authorName(); //作者的用户名
+//$this->dynamics->authorName
+//$this->dynamics->authorId(); //作者id
+//$this->dynamics->authorId
+//$this->dynamics->created(); //动态创建时间 支持参数 $this->dynamics->created("n\月j\日,Y  H:i:s");
+//$this->dynamics->created
+//$this->dynamics->modified(); // 动态更新时间
+//$this->dynamics->modified
+//$this->dynamics->status(); // 动态状态，目前有publish和private
+//$this->dynamics->status
+//$this->dynamics->url(); // 动态的链接
+//$this->dynamics->url
+//$this->dynamics->content(); //动态内容，已markdown解析过后
+//$this->dynamics->content
+//$this->dynamics->text(); //动态内容，没有经过markdown解析
+//$this->dynamics->text
+
+// 注意上述的$this->dynamics->
+// 在index.php 中是 dynamics (有s)
+// 在post.php 中是 dynamic (无s，是单数)
+
 ?>
 
 <?php $this->need("header.php") ?>
