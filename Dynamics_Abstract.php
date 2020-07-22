@@ -25,12 +25,6 @@ class Dynamics_Abstract extends Widget_Abstract_Contents implements Widget_Inter
     public function setAuthorId($authorId)
     {
         $this->authorId = $authorId;
-        try {
-            $hasLogin = $this->user->pass("administrator", true);
-        } catch (Exception $e) {
-            $hasLogin = false;
-        }
-        $this->visualAble = $hasLogin ? true : ($this->status == "private" ? false : true);
     }
 
     public function authorName()
@@ -148,6 +142,12 @@ class Dynamics_Abstract extends Widget_Abstract_Contents implements Widget_Inter
     public function setStatus($status)
     {
         $this->status = $status;
+        try {
+            $hasLogin = $this->user->pass("administrator", true);
+        } catch (Exception $e) {
+            $hasLogin = false;
+        }
+        $this->visualAble = $hasLogin ? true : ($this->status == "private" ? false : true);
     }
 
     public function url()
