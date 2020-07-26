@@ -1,4 +1,6 @@
 <?php
+/** @noinspection PhpInconsistentReturnPointsInspection */
+/** @noinspection PhpUnhandledExceptionInspection */
 /** @noinspection PhpIncludeInspection */
 /** @noinspection DuplicatedCode */
 include_once 'Dynamics_Abstract.php';
@@ -12,7 +14,6 @@ class Dynamics_Action extends Typecho_Widget implements Widget_Interface_Do
     public $dynamic;
     public $dynamics;
     private $params;
-
     private $_themeDir;
 
     public function __construct($request, $response, $params = null)
@@ -116,7 +117,10 @@ class Dynamics_Action extends Typecho_Widget implements Widget_Interface_Do
      */
     public function need($fileName)
     {
-        require_once $this->_themeDir . $fileName;
+        $path = $this->_themeDir . $fileName;
+        if (file_exists($path)) {
+            require_once $path;
+        }
     }
 
     /**
@@ -125,7 +129,10 @@ class Dynamics_Action extends Typecho_Widget implements Widget_Interface_Do
      */
     public function import($fileName)
     {
-        require_once Dynamics_Plugin::themeName() . DIRECTORY_SEPARATOR . $fileName;
+        $path = Dynamics_Plugin::themeName() . DIRECTORY_SEPARATOR . $fileName;
+        if (file_exists($path)) {
+            require_once $path;
+        }
     }
 
     public function showPage()
@@ -174,7 +181,6 @@ class Dynamics_Action extends Typecho_Widget implements Widget_Interface_Do
         if (!$this->isAdmin()) {
             $this->error('请登录后台后重试');
         }
-
         $date = (new Typecho_Date($this->options->gmtTime))->time();
         $dynamic['text'] = "滴滴打卡";
         $dynamic['authorId'] = Typecho_Cookie::get('__typecho_uid');
@@ -182,9 +188,11 @@ class Dynamics_Action extends Typecho_Widget implements Widget_Interface_Do
         $dynamic['created'] = $date;
         /** 插入数据 */
         $dynamicId = $this->db->query($this->db->insert('table.dynamics')->rows($dynamic));
-
-        $data = $this->db->fetchRow($this->db->select('table.dynamics.*, table.users.screenName author_name')->from('table.dynamics')->join('table.users', 'table.dynamics.authorId = table.users.uid')->where('table.dynamics.did =  ?', $dynamicId));
-
+        $data = $this->db->fetchRow($this->db->select('table.dynamics.*, table.users.screenName author_name')
+            ->from('table.dynamics')
+            ->join('table.users', 'table.dynamics.authorId = table.users.uid')
+            ->where('table.dynamics.did =  ?', $dynamicId)
+        );
         $this->success($this->filterParam($data));
     }
 
@@ -193,17 +201,16 @@ class Dynamics_Action extends Typecho_Widget implements Widget_Interface_Do
         if (!$this->isAdmin()) {
             $this->error('请登录后台后重试');
         }
-
         $dynamicId = $this->request->get('did', 0);
-
         $data = array(
             'text' => $this->request->get('text', ''),
         );
-
         $this->db->query($this->db->update('table.dynamics')->rows($data)->where('did = ?', $dynamicId));
-
-        $data = $this->db->fetchRow($this->db->select('table.dynamics.*, table.users.screenName author_name')->from('table.dynamics')->join('table.users', 'table.dynamics.authorId = table.users.uid')->where('table.dynamics.did =  ?', $dynamicId));
-
+        $data = $this->db->fetchRow($this->db->select('table.dynamics.*, table.users.screenName author_name')
+            ->from('table.dynamics')
+            ->join('table.users', 'table.dynamics.authorId = table.users.uid')
+            ->where('table.dynamics.did =  ?', $dynamicId)
+        );
         $this->success($this->filterParam($data));
     }
 
@@ -212,17 +219,14 @@ class Dynamics_Action extends Typecho_Widget implements Widget_Interface_Do
         if (!$this->isAdmin()) {
             $this->error('请登录后台后重试');
         }
-
         $lastid = $this->request->get('lastdid', 0);
         $size = 10;
-
+        $select = $this->db->select('table.dynamics.*, table.users.screenName author_name')->from('table.dynamics')->join('table.users', 'table.dynamics.authorId = table.users.uid');
         if ($lastid) {
-            $data = $this->db->fetchAll($this->db->select('table.dynamics.*, table.users.screenName author_name')->from('table.dynamics')->join('table.users', 'table.dynamics.authorId = table.users.uid')->where('table.dynamics.did < ? ', $lastid)->order('table.dynamics.did', Typecho_Db::SORT_DESC)->limit($size));
-        } else {
-            $data = $this->db->fetchAll($this->db->select('table.dynamics.*, table.users.screenName author_name')->from('table.dynamics')->join('table.users', 'table.dynamics.authorId = table.users.uid')->order('table.dynamics.did', Typecho_Db::SORT_DESC)->limit($size));
+            $select->where('table.dynamics.did < ? ', $lastid);
         }
-
-        $this->success($this->filterParams($data));
+        $select->order('table.dynamics.did', Typecho_Db::SORT_DESC)->limit($size);
+        $this->success($this->filterParams($this->db->fetchAll($select)));
     }
 
     public function deletes()
@@ -230,16 +234,11 @@ class Dynamics_Action extends Typecho_Widget implements Widget_Interface_Do
         if (!$this->isAdmin()) {
             $this->error('请登录后台后重试');
         }
-
         $id = $this->request->get('did', 0);
-
         if (!$id) {
             $this->success();
         }
-
-        $this->db->query($this->db->delete('table.dynamics')
-            ->where('did = ?', $id));
-
+        $this->db->query($this->db->delete('table.dynamics')->where('did = ?', $id));
         $this->success();
     }
 
@@ -251,23 +250,15 @@ class Dynamics_Action extends Typecho_Widget implements Widget_Interface_Do
      */
     public function isAdmin()
     {
-        try {
-            return Typecho_Widget::widget('Widget_User')->pass('administrator', true);
-        } catch (Typecho_Exception $e) {
-            return false;
-        }
+        return $this->user->pass('administrator', true);
     }
 
     public function action()
     {
-        $this->db = Typecho_Db::get();
-        $this->options = Typecho_Widget::widget('Widget_Options');
         $this->on($this->request->is('do=adds'))->adds();
         $this->on($this->request->is('do=saves'))->saves();
         $this->on($this->request->is('do=lists'))->lists();
         $this->on($this->request->is('do=deletes'))->deletes();
-
-        // $this->response->redirect($this->options->adminUrl);
         $this->response->redirect(Typecho_Common::url('extending.php?panel=Dynamics%2Fmanage-dynamics.php', $this->options->adminUrl));
     }
 }
