@@ -129,7 +129,7 @@ class Dynamics_Plugin implements Typecho_Plugin_Interface
     public static function parseUrl($slug)
     {
         $did = base64_decode($slug);
-        return is_numeric($did) ? $did : null;
+        return intval($did) > 0 ? $did : NULL;
     }
 
     /**
