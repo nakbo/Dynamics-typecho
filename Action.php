@@ -13,9 +13,18 @@ class Dynamics_Action extends Typecho_Widget implements Widget_Interface_Do
     public $config;
     public $dynamic;
     public $dynamics;
+    public $thisIs;
     private $params;
     private $_themeDir;
 
+    /**
+     * Dynamics_Action constructor.
+     * @param $request
+     * @param $response
+     * @param null $params
+     * @throws Typecho_Db_Exception
+     * @throws Typecho_Exception
+     */
     public function __construct($request, $response, $params = null)
     {
         parent::__construct($request, $response, $params);
@@ -32,6 +41,12 @@ class Dynamics_Action extends Typecho_Widget implements Widget_Interface_Do
         $this->_themeDir = rtrim($this->options->themeFile($this->options->theme), '/') . '/';
     }
 
+    /**
+     * 动态首页
+     * @param string $path
+     * @param bool $isReturn
+     * @return string
+     */
     public function homeUrl($path = "", $isReturn = false)
     {
         if ($isReturn) {
@@ -41,6 +56,12 @@ class Dynamics_Action extends Typecho_Widget implements Widget_Interface_Do
         }
     }
 
+    /**
+     * 动态主题路径
+     * @param string $path
+     * @param bool $isReturn
+     * @return string
+     */
     public function themeDirUrl($path = "", $isReturn = false)
     {
         if ($isReturn) {
@@ -50,6 +71,10 @@ class Dynamics_Action extends Typecho_Widget implements Widget_Interface_Do
         }
     }
 
+    /**
+     * 动态主题名字
+     * @return string
+     */
     public function getThemeName()
     {
         return Dynamics_Plugin::themeName();
@@ -60,6 +85,8 @@ class Dynamics_Action extends Typecho_Widget implements Widget_Interface_Do
      */
     public function dispatchIndex()
     {
+        $this->thisIs = "index";
+        $this->import("functions.php");
         $this->params['pageSize'] = $this->config->pageSize;
         $this->dynamics = Dynamics_Plugin::get($this->params);
         require_once Dynamics_Plugin::themeName() . '/index.php';
@@ -70,19 +97,18 @@ class Dynamics_Action extends Typecho_Widget implements Widget_Interface_Do
      */
     public function dispatch()
     {
+        $this->thisIs = "post";
+        $this->import("functions.php");
         $slug = $this->request->slug;
         $did = Dynamics_Plugin::parseUrl($slug);
         if (empty($did)) {
+            $this->thisIs = "404";
             require_once Dynamics_Plugin::themeName() . '/404.php';
             exit;
         }
 
-        $select = $this->db->select('table.dynamics.did',
-            'table.dynamics.authorId',
-            'table.dynamics.text',
-            'table.dynamics.status',
-            'table.dynamics.created',
-            'table.dynamics.modified',
+        $select = $this->db->select(
+            'table.dynamics.*',
             'table.users.screenName',
             'table.users.mail')
             ->from('table.dynamics')
@@ -105,10 +131,24 @@ class Dynamics_Action extends Typecho_Widget implements Widget_Interface_Do
 
         $this->dynamic = $dynamic;
         if (empty($this->dynamic)) {
+            $this->thisIs = "404";
             require_once Dynamics_Plugin::themeName() . '/404.php';
             exit;
         }
         require_once Dynamics_Plugin::themeName() . '/post.php';
+    }
+
+    /**
+     * 当前位置，类似博客主题的 $this->is();
+     * 首页 index
+     * 动态 post
+     * 404  404
+     * @param $type
+     * @return bool
+     */
+    public function thisIs($type)
+    {
+        return $this->thisIs == $type;
     }
 
     /**
@@ -135,6 +175,9 @@ class Dynamics_Action extends Typecho_Widget implements Widget_Interface_Do
         }
     }
 
+    /**
+     * 展示分页
+     */
     public function showPage()
     {
         $this->dynamics = Dynamics_Plugin::get($this->params);

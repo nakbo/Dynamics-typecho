@@ -10,6 +10,8 @@ class Dynamics extends Dynamics_Abstract
     private $_position;
     private $pageNavigator;
 
+    public $current;
+
     /**
      * Dynamics_ constructor.
      * @param array $params
@@ -17,16 +19,15 @@ class Dynamics extends Dynamics_Abstract
     public function parse($params = array())
     {
         $page = $this->request->get('dynamicsPage', 1);
+        $this->current = $page;
         $pageSize = $params["pageSize"] ?: 5;
 
-        $select = $this->db->select('table.dynamics.did',
-            'table.dynamics.authorId',
-            'table.dynamics.text',
-            'table.dynamics.status',
-            'table.dynamics.created',
-            'table.dynamics.modified',
+        $select = $this->db->select(
+            'table.dynamics.*',
             'table.users.screenName',
-            'table.users.mail')->from('table.dynamics');
+            'table.users.mail')
+            ->where("table.dynamics.status != ?", "hidden")
+            ->from('table.dynamics');
         $select->join('table.users', 'table.dynamics.authorId = table.users.uid', Typecho_Db::LEFT_JOIN);
 
         $select = $select->order('table.dynamics.created', Typecho_Db::SORT_DESC);
@@ -42,6 +43,10 @@ class Dynamics extends Dynamics_Abstract
 
     }
 
+    /**
+     * 遍历
+     * @return array|bool
+     */
     public function next()
     {
         if ($this->_have) {
@@ -64,13 +69,16 @@ class Dynamics extends Dynamics_Abstract
 
     /**
      * 当前页面位置
-     * @return int
+     * @return void
      */
     public function current()
     {
-        return $this->_position + 1;
+        echo $this->current;
     }
 
+    /**
+     * 分页布局
+     */
     public function navigator()
     {
         echo "<ol class=\"dynamics-page-navigator\">" . $this->pageNavigator->show() . "</ol>";

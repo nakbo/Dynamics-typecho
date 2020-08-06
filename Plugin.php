@@ -5,11 +5,12 @@ include_once 'Dynamics.php';
  * 我的动态 - 南博助手
  * @package Dynamics
  * @author 权那他
- * @version 1.3
+ * @version 1.4
  * @link https://github.com/kraity/Dynamics
  */
 class Dynamics_Plugin implements Typecho_Plugin_Interface
 {
+    /** 动态首页路径 */
     const DYNAMICS_ROUTE = '/dynamics/';
     private static $instance;
     public static $homeUrl;
@@ -95,6 +96,10 @@ class Dynamics_Plugin implements Typecho_Plugin_Interface
         }
     }
 
+    /**
+     * 动态主题名字
+     * @return string
+     */
     public static function themeName()
     {
         if (self::$themeName == null) {
@@ -138,6 +143,8 @@ class Dynamics_Plugin implements Typecho_Plugin_Interface
      * @access public
      * @param null $pattern
      * @param int $num
+     * @throws Typecho_Db_Exception
+     * @throws Typecho_Exception
      */
     public static function output($pattern = NULL, $num = 5)
     {
@@ -148,6 +155,11 @@ class Dynamics_Plugin implements Typecho_Plugin_Interface
         $action->showPage();
     }
 
+    /**
+     * 动态实例
+     * @param array $params
+     * @return Dynamics
+     */
     public static function get($params = array())
     {
         $dynamics = new Dynamics(
@@ -158,6 +170,11 @@ class Dynamics_Plugin implements Typecho_Plugin_Interface
         return $dynamics;
     }
 
+    /**
+     * 动态单实例
+     * @param array $params
+     * @return Dynamics
+     */
     public static function getInstance($params = array())
     {
         if (self::$instance == null) {
@@ -166,6 +183,10 @@ class Dynamics_Plugin implements Typecho_Plugin_Interface
         return self::$instance;
     }
 
+    /**
+     * 获取动态主题名字列表
+     * @return array
+     */
     public static function getList()
     {
         $list = array();
