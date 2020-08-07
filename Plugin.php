@@ -218,7 +218,7 @@ class Dynamics_Plugin implements Typecho_Plugin_Interface
         $form->addInput($radio);
 
         $radio = new Typecho_Widget_Helper_Form_Element_Radio(
-            'theme', self::getList(), 'default', _t('模板选择'), "选择一个动态的主题");
+            'theme', self::getList(), 'AlphaPure', _t('模板选择'), "选择一个动态的主题");
         $form->addInput($radio);
     }
 
