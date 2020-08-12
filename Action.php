@@ -14,6 +14,7 @@ class Dynamics_Action extends Typecho_Widget implements Widget_Interface_Do
     public $dynamic;
     public $dynamics;
     public $thisIs;
+    public $slug;
     private $params;
     private $_themeDir;
 
@@ -98,9 +99,9 @@ class Dynamics_Action extends Typecho_Widget implements Widget_Interface_Do
     public function dispatch()
     {
         $this->thisIs = "post";
+        $this->slug = $this->request->slug;
         $this->import("functions.php");
-        $slug = $this->request->slug;
-        $did = Dynamics_Plugin::parseUrl($slug);
+        $did = Dynamics_Plugin::parseUrl($this->slug);
         if (empty($did)) {
             $this->thisIs = "404";
             require_once Dynamics_Plugin::themeName() . '/404.php';
@@ -115,7 +116,13 @@ class Dynamics_Action extends Typecho_Widget implements Widget_Interface_Do
             ->join('table.users', 'table.dynamics.authorId = table.users.uid', Typecho_Db::LEFT_JOIN)
             ->where("table.dynamics.did = ?", $did);
 
-        $dic = $this->db->fetchAll($select)[0];
+        $dic = $this->db->fetchRow($select);
+        if (count($dic) == 0) {
+            $this->thisIs = "404";
+            require_once Dynamics_Plugin::themeName() . '/404.php';
+            exit;
+        }
+
         $dynamic = new Dynamics_Abstract(
             Typecho_Request::getInstance(),
             Typecho_Response::getInstance()
@@ -128,13 +135,8 @@ class Dynamics_Action extends Typecho_Widget implements Widget_Interface_Do
         $dynamic->setText($dic['text']);
         $dynamic->setCreated($dic['created']);
         $dynamic->setModified($dic['modified']);
-
         $this->dynamic = $dynamic;
-        if (empty($this->dynamic)) {
-            $this->thisIs = "404";
-            require_once Dynamics_Plugin::themeName() . '/404.php';
-            exit;
-        }
+
         require_once Dynamics_Plugin::themeName() . '/post.php';
     }
 

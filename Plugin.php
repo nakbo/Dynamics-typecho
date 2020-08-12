@@ -119,10 +119,12 @@ class Dynamics_Plugin implements Typecho_Plugin_Interface
      */
     public static function applyUrl($did, $isReturn = false)
     {
+        $slug = base64_encode($did);
+        $slug = str_replace('=', '', $slug) . '=';
         if ($isReturn) {
-            return self::homeUrl(base64_encode($did), true);
+            return self::homeUrl($slug, true);
         } else {
-            self::homeUrl(base64_encode($did), false);
+            self::homeUrl($slug, false);
         }
     }
 
