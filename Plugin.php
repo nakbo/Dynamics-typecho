@@ -16,6 +16,7 @@ class Dynamics_Plugin implements Typecho_Plugin_Interface
     public static $homeUrl;
     public static $themeDirUrl;
     public static $themeName;
+    public static $themeNameDir;
 
     // 激活插件
     public static function activate()
@@ -84,7 +85,7 @@ class Dynamics_Plugin implements Typecho_Plugin_Interface
     {
         if (self::$themeDirUrl == null) {
             try {
-                self::$themeDirUrl = Typecho_Common::url('/Dynamics/' . Dynamics_Plugin::themeName() . "/", Typecho_Widget::widget('Widget_Options')->pluginUrl);
+                self::$themeDirUrl = Typecho_Common::url('/Dynamics/' . Dynamics_Plugin::themeDir(), Typecho_Widget::widget('Widget_Options')->pluginUrl);
             } catch (Typecho_Exception $e) {
             }
         }
@@ -98,17 +99,31 @@ class Dynamics_Plugin implements Typecho_Plugin_Interface
 
     /**
      * 动态主题名字
-     * @return string
+     * @return mixed
      */
     public static function themeName()
     {
         if (self::$themeName == null) {
             try {
-                self::$themeName = "themes/" . Typecho_Widget::widget('Widget_Options')->Plugin('Dynamics')->theme;
+                self::$themeName = Typecho_Widget::widget('Widget_Options')->Plugin('Dynamics')->theme;
             } catch (Typecho_Exception $e) {
             }
         }
         return self::$themeName;
+    }
+
+    /**
+     * 动态主题相对路径
+     * @param string $path
+     * @return string
+     * @throws Typecho_Exception
+     */
+    public static function themeDir($path = "")
+    {
+        if (self::$themeNameDir == null) {
+            self::$themeNameDir = "themes/" . Typecho_Widget::widget('Widget_Options')->Plugin('Dynamics')->theme . "/";
+        }
+        return self::$themeNameDir . $path;
     }
 
     /**

@@ -90,7 +90,7 @@ class Dynamics_Action extends Typecho_Widget implements Widget_Interface_Do
         $this->import("functions.php");
         $this->params['pageSize'] = $this->config->pageSize;
         $this->dynamics = Dynamics_Plugin::get($this->params);
-        require_once Dynamics_Plugin::themeName() . '/index.php';
+        require_once Dynamics_Plugin::themeDir('index.php');
     }
 
     /**
@@ -104,7 +104,7 @@ class Dynamics_Action extends Typecho_Widget implements Widget_Interface_Do
         $did = Dynamics_Plugin::parseUrl($this->slug);
         if (empty($did)) {
             $this->thisIs = "404";
-            require_once Dynamics_Plugin::themeName() . '/404.php';
+            require_once Dynamics_Plugin::themeDir('404.php');
             exit;
         }
 
@@ -119,7 +119,7 @@ class Dynamics_Action extends Typecho_Widget implements Widget_Interface_Do
         $dic = $this->db->fetchRow($select);
         if (count($dic) == 0) {
             $this->thisIs = "404";
-            require_once Dynamics_Plugin::themeName() . '/404.php';
+            require_once Dynamics_Plugin::themeDir('404.php');
             exit;
         }
 
@@ -137,7 +137,7 @@ class Dynamics_Action extends Typecho_Widget implements Widget_Interface_Do
         $dynamic->setModified($dic['modified']);
         $this->dynamic = $dynamic;
 
-        require_once Dynamics_Plugin::themeName() . '/post.php';
+        require_once Dynamics_Plugin::themeDir('post.php');
     }
 
     /**
@@ -183,7 +183,7 @@ class Dynamics_Action extends Typecho_Widget implements Widget_Interface_Do
     public function showPage()
     {
         $this->dynamics = Dynamics_Plugin::get($this->params);
-        require Dynamics_Plugin::themeName() . '/page.php';
+        require Dynamics_Plugin::themeDir('page.php');
     }
 
     private function error($message = '', $data = array())
