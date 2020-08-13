@@ -5,7 +5,7 @@ include_once 'Dynamics.php';
  * 我的动态 - 南博助手
  * @package Dynamics
  * @author 权那他
- * @version 1.4
+ * @version 1.5
  * @link https://github.com/kraity/Dynamics
  */
 class Dynamics_Plugin implements Typecho_Plugin_Interface

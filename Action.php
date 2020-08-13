@@ -206,7 +206,15 @@ class Dynamics_Action extends Typecho_Widget implements Widget_Interface_Do
 
     private function filterParam($dynamic)
     {
-        $dynamic["title"] = ($dynamic["status"] == "private" ? "[私密] " : "") . date("m月d日, Y年", $dynamic["created"]);
+
+        $statusName = "";
+        if ($dynamic["status"] == "private") {
+            $statusName = "[私密] ";
+        } else if ($dynamic["status"] == "hidden") {
+            $statusName = "[隐藏] ";
+        }
+
+        $dynamic["title"] = $statusName . date("m月d日, Y年", $dynamic["created"]);
         $dynamic["url"] = Dynamics_Plugin::applyUrl($dynamic["did"], true);
         $dynamic["desc"] = mb_substr(strip_tags($dynamic["text"]), 0, 20, 'utf-8');
         return $dynamic;
