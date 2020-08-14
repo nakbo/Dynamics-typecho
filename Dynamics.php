@@ -35,8 +35,10 @@ class Dynamics extends Dynamics_Abstract
         $this->_dynamics_list = $this->db->fetchAll($select);
         $count = $this->db->select('count(1) AS count')->from('table.dynamics');
         $count = $this->db->fetchAll($count)[0]['count'];
-        $this->pageNavigator = new Dynamics_Page($pageSize, $count, $page, 4,
-            array(), false, $params["isPjax"] ?: false
+        $this->pageNavigator = new Dynamics_Page(
+            $pageSize, $count, $page, 4, array(
+                "isPjax" => $params["isPjax"] ?: false
+            )
         );
         $this->_have = count($this->_dynamics_list) > 0;
         $this->_position = 0;
