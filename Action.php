@@ -50,11 +50,7 @@ class Dynamics_Action extends Typecho_Widget implements Widget_Interface_Do
      */
     public function homeUrl($path = "", $isReturn = false)
     {
-        if ($isReturn) {
-            return Dynamics_Plugin::homeUrl($path, true);
-        } else {
-            Dynamics_Plugin::homeUrl($path);
-        }
+        call_user_func("Dynamics_Plugin::homeUrl", $path, $isReturn);
     }
 
     /**
@@ -63,22 +59,39 @@ class Dynamics_Action extends Typecho_Widget implements Widget_Interface_Do
      * @param bool $isReturn
      * @return string
      */
+    public function themeUrl($path = "", $isReturn = false)
+    {
+        call_user_func("Dynamics_Plugin::themeUrl", $path, $isReturn);
+    }
+
+    /**
+     * @Deprecated 已弃用, 暂时保留
+     * @param string $path
+     * @param bool $isReturn
+     * @Deprecated
+     */
     public function themeDirUrl($path = "", $isReturn = false)
     {
-        if ($isReturn) {
-            return Dynamics_Plugin::themeDirUrl($path, true);
-        } else {
-            Dynamics_Plugin::themeDirUrl($path);
-        }
+        call_user_func("Dynamics_Plugin::themeUrl", $path, $isReturn);
     }
 
     /**
      * 动态主题名字
      * @return string
      */
-    public function getThemeName()
+    public function themeName()
     {
-        return Dynamics_Plugin::themeName();
+        call_user_func("Dynamics_Plugin::themeName");
+    }
+
+    /**
+     * 动态主题绝对路径
+     * @param string $path
+     * @return string
+     */
+    public static function themeFile($path = "")
+    {
+        call_user_func("Dynamics_Plugin::themeFile", $path);
     }
 
     /**
@@ -90,7 +103,7 @@ class Dynamics_Action extends Typecho_Widget implements Widget_Interface_Do
         $this->import("functions.php");
         $this->params['pageSize'] = $this->config->pageSize;
         $this->dynamics = Dynamics_Plugin::get($this->params);
-        require_once Dynamics_Plugin::themeDir('index.php');
+        require_once Dynamics_Plugin::themeFile('index.php');
     }
 
     /**
@@ -104,7 +117,7 @@ class Dynamics_Action extends Typecho_Widget implements Widget_Interface_Do
         $did = Dynamics_Plugin::parseUrl($this->slug);
         if (empty($did)) {
             $this->thisIs = "404";
-            require_once Dynamics_Plugin::themeDir('404.php');
+            require_once Dynamics_Plugin::themeFile('404.php');
             exit;
         }
 
@@ -119,7 +132,7 @@ class Dynamics_Action extends Typecho_Widget implements Widget_Interface_Do
         $dic = $this->db->fetchRow($select);
         if (count($dic) == 0) {
             $this->thisIs = "404";
-            require_once Dynamics_Plugin::themeDir('404.php');
+            require_once Dynamics_Plugin::themeFile('404.php');
             exit;
         }
 
@@ -137,7 +150,7 @@ class Dynamics_Action extends Typecho_Widget implements Widget_Interface_Do
         $dynamic->setModified($dic['modified']);
         $this->dynamic = $dynamic;
 
-        require_once Dynamics_Plugin::themeDir('post.php');
+        require_once Dynamics_Plugin::themeFile('post.php');
     }
 
     /**
@@ -183,7 +196,7 @@ class Dynamics_Action extends Typecho_Widget implements Widget_Interface_Do
     public function showPage()
     {
         $this->dynamics = Dynamics_Plugin::get($this->params);
-        require Dynamics_Plugin::themeDir('page.php');
+        require Dynamics_Plugin::themeFile('page.php');
     }
 
     private function error($message = '', $data = array())
