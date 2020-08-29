@@ -15,7 +15,8 @@ class Dynamics_Action extends Typecho_Widget implements Widget_Interface_Do
     public $dynamics;
     public $thisIs;
     public $slug;
-    private $params;
+
+    private $_params;
     private $_themeDir;
 
     /**
@@ -34,11 +35,11 @@ class Dynamics_Action extends Typecho_Widget implements Widget_Interface_Do
         $this->config = $this->options->Plugin('Dynamics');
         $this->user = Typecho_Widget::widget('Widget_User');
 
-        $this->params = array(
+        $this->_params = array(
             "isPjax" => $this->config->isPjax == 1
         );
 
-        /** 初始化主题皮肤路径 */
+        /** 初始化博客主题皮肤路径 */
         $this->_themeDir = rtrim($this->options->themeFile($this->options->theme), '/') . '/';
     }
 
@@ -101,9 +102,9 @@ class Dynamics_Action extends Typecho_Widget implements Widget_Interface_Do
     {
         $this->thisIs = "index";
         $this->import("functions.php");
-        $this->params['pageSize'] = $this->config->pageSize;
-        $this->dynamics = Dynamics_Plugin::get($this->params);
-        require_once Dynamics_Plugin::themeFile('index.php');
+        $this->_params['pageSize'] = $this->config->pageSize;
+        $this->dynamics = Dynamics_Plugin::get($this->_params);
+        $this->import('index.php');
     }
 
     /**
@@ -114,11 +115,10 @@ class Dynamics_Action extends Typecho_Widget implements Widget_Interface_Do
         $this->thisIs = "post";
         $this->slug = $this->request->slug;
         $this->import("functions.php");
+
         $did = Dynamics_Plugin::parseUrl($this->slug);
         if (empty($did)) {
-            $this->thisIs = "404";
-            require_once Dynamics_Plugin::themeFile('404.php');
-            exit;
+            $this->error404();
         }
 
         $select = $this->db->select(
@@ -131,9 +131,7 @@ class Dynamics_Action extends Typecho_Widget implements Widget_Interface_Do
 
         $dic = $this->db->fetchRow($select);
         if (count($dic) == 0) {
-            $this->thisIs = "404";
-            require_once Dynamics_Plugin::themeFile('404.php');
-            exit;
+            $this->error404();
         }
 
         $dynamic = new Dynamics_Abstract(
@@ -150,7 +148,8 @@ class Dynamics_Action extends Typecho_Widget implements Widget_Interface_Do
         $dynamic->setModified($dic['modified']);
         $this->dynamic = $dynamic;
 
-        require_once Dynamics_Plugin::themeFile('post.php');
+        /* 引入布局 */
+        $this->import('post.php');
     }
 
     /**
@@ -184,7 +183,7 @@ class Dynamics_Action extends Typecho_Widget implements Widget_Interface_Do
      */
     public function import($fileName)
     {
-        $path = Dynamics_Plugin::themeName() . DIRECTORY_SEPARATOR . $fileName;
+        $path = Dynamics_Plugin::themeFile($fileName);
         if (file_exists($path)) {
             require_once $path;
         }
@@ -195,8 +194,20 @@ class Dynamics_Action extends Typecho_Widget implements Widget_Interface_Do
      */
     public function showPage()
     {
-        $this->dynamics = Dynamics_Plugin::get($this->params);
-        require Dynamics_Plugin::themeFile('page.php');
+        $this->thisIs = "page";
+        $this->dynamics = Dynamics_Plugin::get($this->_params);
+        $this->import('page.php');
+    }
+
+    /**
+     * 404
+     */
+    public function error404()
+    {
+        $this->response->setStatus(404);
+        $this->thisIs = "404";
+        $this->import('404.php');
+        exit;
     }
 
     private function error($message = '', $data = array())

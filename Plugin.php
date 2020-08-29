@@ -13,9 +13,9 @@ class Dynamics_Plugin implements Typecho_Plugin_Interface
     /** 动态首页路径 */
     const DYNAMICS_ROUTE = '/dynamics/';
     private static $instance;
-    public static $homeUrl;
-    public static $themeBaseUrl;
-    public static $themeName;
+    private static $homeUrl;
+    private static $themeBaseUrl;
+    private static $themeName;
 
     /**
      * 激活插件
@@ -24,15 +24,8 @@ class Dynamics_Plugin implements Typecho_Plugin_Interface
      */
     public static function activate()
     {
-        Helper::addPanel(3, 'Dynamics/manage-dynamics.php', '我的动态', '我的动态列表', 'administrator');
-        Helper::addAction('dynamics-manage', 'Dynamics_Action');
-        Helper::addRoute('dynamics-index-route', Dynamics_Plugin::DYNAMICS_ROUTE, 'Dynamics_Action', 'dispatchIndex');
-        Helper::addRoute('dynamics-route', Dynamics_Plugin::DYNAMICS_ROUTE . "[slug]/", 'Dynamics_Action', 'dispatch');
-
         $db = Typecho_Db::get();
         $prefix = $db->getPrefix();
-        /** @noinspection SqlResolve */
-        /** @noinspection SqlNoDataSourceInspection */
         $db->query('CREATE TABLE IF NOT EXISTS `' . $prefix . 'dynamics` (
 		  `did` int(11) unsigned NOT NULL AUTO_INCREMENT,
 		  `authorId` int(11) DEFAULT NULL,
@@ -43,10 +36,18 @@ class Dynamics_Plugin implements Typecho_Plugin_Interface
 		  PRIMARY KEY (`did`)
 		) DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;');
 
+        Helper::addPanel(3, 'Dynamics/manage-dynamics.php', '我的动态', '我的动态列表', 'administrator');
+        Helper::addAction('dynamics-manage', 'Dynamics_Action');
+        Helper::addRoute('dynamics-index-route', Dynamics_Plugin::DYNAMICS_ROUTE, 'Dynamics_Action', 'dispatchIndex');
+        Helper::addRoute('dynamics-route', Dynamics_Plugin::DYNAMICS_ROUTE . "[slug]/", 'Dynamics_Action', 'dispatch');
+
         return _t('插件已经激活');
     }
 
-    // 禁用插件
+    /**
+     * 禁用插件
+     * @return string|void
+     */
     public static function deactivate()
     {
         Helper::removePanel(3, 'Dynamics/manage-dynamics.php');
@@ -81,7 +82,7 @@ class Dynamics_Plugin implements Typecho_Plugin_Interface
      * @param string $path
      * @param bool $isReturn
      * @return string
-     * @throws Typecho_Exception
+     * @noinspection PhpDocMissingThrowsInspection
      */
     public static function themeUrl($path = "", $isReturn = false)
     {
@@ -109,7 +110,7 @@ class Dynamics_Plugin implements Typecho_Plugin_Interface
     /**
      * 动态主题名字
      * @return mixed
-     * @throws Typecho_Exception
+     * @noinspection PhpDocMissingThrowsInspection
      */
     public static function themeName()
     {
@@ -123,7 +124,6 @@ class Dynamics_Plugin implements Typecho_Plugin_Interface
      * 动态主题绝对路径
      * @param string $path
      * @return string
-     * @throws Typecho_Exception
      */
     public static function themeFile($path = "")
     {
