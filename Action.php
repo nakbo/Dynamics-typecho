@@ -36,11 +36,11 @@ class Dynamics_Action extends Typecho_Widget implements Widget_Interface_Do
         $this->user = Typecho_Widget::widget('Widget_User');
 
         $this->_params = array(
+            "pageSize" => $this->config->pageSize,
             "isPjax" => $this->config->isPjax == 1
         );
-
-        /** 初始化博客主题皮肤路径 */
         $this->_themeDir = rtrim($this->options->themeFile($this->options->theme), '/') . '/';
+
     }
 
     /**
@@ -102,8 +102,9 @@ class Dynamics_Action extends Typecho_Widget implements Widget_Interface_Do
     {
         $this->thisIs = "index";
         $this->import("functions.php");
-        $this->_params['pageSize'] = $this->config->pageSize;
         $this->dynamics = Dynamics_Plugin::get($this->_params);
+
+        /* 引入布局 */
         $this->import('index.php');
     }
 
@@ -134,19 +135,18 @@ class Dynamics_Action extends Typecho_Widget implements Widget_Interface_Do
             $this->error404();
         }
 
-        $dynamic = new Dynamics_Abstract(
+        $this->dynamic = new Dynamics_Abstract(
             Typecho_Request::getInstance(),
             Typecho_Response::getInstance()
         );
-        $dynamic->setDid($dic['did']);
-        $dynamic->setStatus($dic['status']);
-        $dynamic->setAuthorId($dic['authorId']);
-        $dynamic->setMail($dic['mail']);
-        $dynamic->setAuthorName($dic['screenName']);
-        $dynamic->setText($dic['text']);
-        $dynamic->setCreated($dic['created']);
-        $dynamic->setModified($dic['modified']);
-        $this->dynamic = $dynamic;
+        $this->dynamic->setDid($dic['did']);
+        $this->dynamic->setStatus($dic['status']);
+        $this->dynamic->setAuthorId($dic['authorId']);
+        $this->dynamic->setMail($dic['mail']);
+        $this->dynamic->setAuthorName($dic['screenName']);
+        $this->dynamic->setText($dic['text']);
+        $this->dynamic->setCreated($dic['created']);
+        $this->dynamic->setModified($dic['modified']);
 
         /* 引入布局 */
         $this->import('post.php');
@@ -195,6 +195,7 @@ class Dynamics_Action extends Typecho_Widget implements Widget_Interface_Do
     public function showPage()
     {
         $this->thisIs = "page";
+        $this->import("functions.php");
         $this->dynamics = Dynamics_Plugin::get($this->_params);
         $this->import('page.php');
     }
@@ -206,6 +207,7 @@ class Dynamics_Action extends Typecho_Widget implements Widget_Interface_Do
     {
         $this->response->setStatus(404);
         $this->thisIs = "404";
+        $this->import("functions.php");
         $this->import('404.php');
         exit;
     }
@@ -230,7 +232,6 @@ class Dynamics_Action extends Typecho_Widget implements Widget_Interface_Do
 
     private function filterParam($dynamic)
     {
-
         $statusName = "";
         if ($dynamic["status"] == "private") {
             $statusName = "[私密] ";

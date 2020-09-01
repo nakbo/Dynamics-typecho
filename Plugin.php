@@ -62,7 +62,8 @@ class Dynamics_Plugin implements Typecho_Plugin_Interface
      * @param string $path
      * @param bool $isReturn
      * @return string
-     * @throws Typecho_Exception
+     * @noinspection PhpDocMissingThrowsInspection
+     * @noinspection PhpInconsistentReturnPointsInspection
      */
     public static function homeUrl($path = "", $isReturn = false)
     {
@@ -83,6 +84,7 @@ class Dynamics_Plugin implements Typecho_Plugin_Interface
      * @param bool $isReturn
      * @return string
      * @noinspection PhpDocMissingThrowsInspection
+     * @noinspection PhpInconsistentReturnPointsInspection
      */
     public static function themeUrl($path = "", $isReturn = false)
     {
@@ -134,6 +136,7 @@ class Dynamics_Plugin implements Typecho_Plugin_Interface
      * @Deprecated 已弃用, 暂时保留
      * @param string $path
      * @return string
+     * @noinspection PhpInconsistentReturnPointsInspection
      */
     public static function themeDir($path = "")
     {
@@ -145,7 +148,7 @@ class Dynamics_Plugin implements Typecho_Plugin_Interface
      * @param $did
      * @param bool $isReturn
      * @return string
-     * @throws Typecho_Exception
+     * @noinspection PhpInconsistentReturnPointsInspection
      */
     public static function applyUrl($did, $isReturn = false)
     {

@@ -5,12 +5,13 @@ include_once 'Dynamics_Page.php';
 
 class Dynamics extends Dynamics_Abstract
 {
-    private $_dynamics_list = array();
-    private $_have;
+    private $_dynamics_list;
     private $_position;
-    private $pageNavigator;
+    private $_list_length;
 
     public $current;
+    public $dynamicsNum;
+    public $pageNavigator;
 
     /**
      * Dynamics_ constructor.
@@ -20,7 +21,8 @@ class Dynamics extends Dynamics_Abstract
     {
         $page = $this->request->get('dynamicsPage', 1);
         $this->current = $page;
-        $pageSize = $params["pageSize"] ?: 5;
+        $pageSize = intval($params["pageSize"]);
+        $pageSize = $pageSize > 0 ? $pageSize : 5;
 
         $select = $this->db->select(
             'table.dynamics.*',
@@ -32,16 +34,19 @@ class Dynamics extends Dynamics_Abstract
 
         $select = $select->order('table.dynamics.created', Typecho_Db::SORT_DESC);
         $select = $select->page($page, $pageSize);
+
         $this->_dynamics_list = $this->db->fetchAll($select);
-        $count = $this->db->select('count(1) AS count')->from('table.dynamics');
-        $count = $this->db->fetchAll($count)[0]['count'];
+        $this->dynamicsNum = $this->db->fetchAll(
+            $this->db->select('count(1) AS count')->from('table.dynamics')
+        )[0]['count'];
         $this->pageNavigator = new Dynamics_Page(
-            $pageSize, $count, $page, 4, array(
-                "isPjax" => $params["isPjax"] ?: false
+            $pageSize, $this->dynamicsNum, $page, 4, array(
+                "isPjax" => boolval($params["isPjax"])
             )
         );
-        $this->_have = count($this->_dynamics_list) > 0;
+
         $this->_position = 0;
+        $this->_list_length = count($this->_dynamics_list);
 
     }
 
@@ -51,7 +56,7 @@ class Dynamics extends Dynamics_Abstract
      */
     public function next()
     {
-        if ($this->_have) {
+        if ($this->_list_length > $this->_position) {
             $dic = $this->_dynamics_list[$this->_position];
             $this->setDid($dic['did']);
             $this->setStatus($dic['status']);
@@ -62,7 +67,6 @@ class Dynamics extends Dynamics_Abstract
             $this->setCreated($dic['created']);
             $this->setModified($dic['modified']);
             $this->_position++;
-            $this->_have = count($this->_dynamics_list) > $this->_position;
             return true;
         } else {
             return false;
