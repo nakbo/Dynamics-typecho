@@ -47,10 +47,14 @@ if ($pageType == 'index'){
 <meta content="<?php echo $this->options->keywords; ?>" name="keywords" />
 <meta content="<?php echo $pageDescription; ?>" name="description" />
 <!-- 引用CSS -->
-<link rel="stylesheet" href="<?php Dynamics_Plugin::themeDirUrl("dynamic_index.css?version=1.3&time=2020.07.21.18") ?>"/>
+<link rel="stylesheet" href="<?php Dynamics_Plugin::themeDirUrl("dynamic_index.css?version=1.3&time=2020.09.20.03") ?>"/>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.css" />
 </head>
 <body>
     <div id="process-container"></div>
     <div class="container" id="pjax-container">
-        <div class="nav"><?php echo '<a href="'.$this->options->siteUrl.'" target="_blank">'. $this->options->title.'&nbsp;&raquo;</a>'; ?></div>
+        <div class="nav">
+            <a href="<?php echo $this->options->siteUrl; ?>" target="_blank">主页</a>丨
+            <a href="<?php echo $this->options->siteUrl.'dynamics/'; ?>">动态</a>丨
+            <?php echo '<a href="'.$this->options->siteUrl.'dynamics/">'. $this->options->title.'&nbsp;&raquo;</a>'; ?>
+        </div>
