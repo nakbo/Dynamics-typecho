@@ -14,6 +14,9 @@ class Dynamics_Abstract extends Widget_Abstract_Contents implements Widget_Inter
     public $status;
     public $url;
 
+    /**
+     * 作者id
+     */
     public function authorId()
     {
         echo $this->authorId;
@@ -27,6 +30,9 @@ class Dynamics_Abstract extends Widget_Abstract_Contents implements Widget_Inter
         $this->authorId = $authorId;
     }
 
+    /**
+     * 作者名字
+     */
     public function authorName()
     {
         echo $this->authorName;
@@ -40,6 +46,9 @@ class Dynamics_Abstract extends Widget_Abstract_Contents implements Widget_Inter
         $this->authorName = $authorName;
     }
 
+    /**
+     * 作者邮箱
+     */
     public function mail()
     {
         echo $this->mail;
@@ -53,11 +62,20 @@ class Dynamics_Abstract extends Widget_Abstract_Contents implements Widget_Inter
         $this->mail = $mail;
     }
 
+    /**
+     * 作者头像
+     * @param int $size
+     * @param string $rating
+     * @param string $default
+     */
     public function avatar($size = 200, $rating = 'X', $default = 'mm')
     {
         echo Typecho_Common::gravatarUrl($this->mail, $size, $rating, $default, $this->request->isSecure());
     }
 
+    /**
+     * 动态id
+     */
     public function did()
     {
         echo $this->did;
@@ -72,6 +90,9 @@ class Dynamics_Abstract extends Widget_Abstract_Contents implements Widget_Inter
         $this->url = Dynamics_Plugin::applyUrl($did, true);
     }
 
+    /**
+     * 动态内容，没有解析
+     */
     public function text()
     {
         echo $this->text;
@@ -87,9 +108,10 @@ class Dynamics_Abstract extends Widget_Abstract_Contents implements Widget_Inter
     }
 
     /**
+     * 动态内容，经过markdown解析
      * @param string $privateTemplate 私密模板
      */
-    public function content($privateTemplate = "这是一条私密动态")
+    public function content($privateTemplate = "<div class=\"hideContent\">这是一条私密动态</div>")
     {
         echo $this->visualAble ? $this->content : $privateTemplate;
     }
@@ -103,6 +125,7 @@ class Dynamics_Abstract extends Widget_Abstract_Contents implements Widget_Inter
     }
 
     /**
+     * 动态创建时间
      * @param string $format
      */
     public function created($format = "n\月j\日,Y  H:i:s")
@@ -118,6 +141,9 @@ class Dynamics_Abstract extends Widget_Abstract_Contents implements Widget_Inter
         $this->created = $created;
     }
 
+    /**
+     * 动态更新时间
+     */
     public function modified()
     {
         echo $this->modified;
@@ -131,6 +157,9 @@ class Dynamics_Abstract extends Widget_Abstract_Contents implements Widget_Inter
         $this->modified = $modified;
     }
 
+    /**
+     * 动态状态
+     */
     public function status()
     {
         echo $this->status;
@@ -150,13 +179,18 @@ class Dynamics_Abstract extends Widget_Abstract_Contents implements Widget_Inter
         $this->visualAble = $hasLogin ? true : ($this->status == "private" ? false : true);
     }
 
+    /**
+     * 动态的页面链接
+     */
     public function url()
     {
         echo $this->url;
     }
 
     /**
-     * @inheritDoc
+     * action
+     * @throws Typecho_Db_Exception
+     * @throws Typecho_Exception
      */
     public function action()
     {

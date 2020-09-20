@@ -5,28 +5,27 @@ include_once 'Dynamics.php';
  * 我的动态 - 南博助手
  * @package Dynamics
  * @author 权那他
- * @version 1.3
+ * @version 1.5
+ * @link https://github.com/kraity/Dynamics
  */
 class Dynamics_Plugin implements Typecho_Plugin_Interface
 {
+    /** 动态首页路径 */
     const DYNAMICS_ROUTE = '/dynamics/';
     private static $instance;
-    public static $homeUrl;
-    public static $themeDirUrl;
-    public static $themeName;
+    private static $homeUrl;
+    private static $themeBaseUrl;
+    private static $themeName;
 
-    // 激活插件
+    /**
+     * 激活插件
+     * @return string|void
+     * @throws Typecho_Db_Exception
+     */
     public static function activate()
     {
-        Helper::addPanel(3, 'Dynamics/manage-dynamics.php', '我的动态', '我的动态列表', 'administrator');
-        Helper::addAction('dynamics-manage', 'Dynamics_Action');
-        Helper::addRoute('dynamics-index-route', Dynamics_Plugin::DYNAMICS_ROUTE, 'Dynamics_Action', 'dispatchIndex');
-        Helper::addRoute('dynamics-route', Dynamics_Plugin::DYNAMICS_ROUTE . "[slug]/", 'Dynamics_Action', 'dispatch');
-
         $db = Typecho_Db::get();
         $prefix = $db->getPrefix();
-        /** @noinspection SqlResolve */
-        /** @noinspection SqlNoDataSourceInspection */
         $db->query('CREATE TABLE IF NOT EXISTS `' . $prefix . 'dynamics` (
 		  `did` int(11) unsigned NOT NULL AUTO_INCREMENT,
 		  `authorId` int(11) DEFAULT NULL,
@@ -37,10 +36,18 @@ class Dynamics_Plugin implements Typecho_Plugin_Interface
 		  PRIMARY KEY (`did`)
 		) DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;');
 
+        Helper::addPanel(3, 'Dynamics/manage-dynamics.php', '我的动态', '我的动态列表', 'administrator');
+        Helper::addAction('dynamics-manage', 'Dynamics_Action');
+        Helper::addRoute('dynamics-index-route', Dynamics_Plugin::DYNAMICS_ROUTE, 'Dynamics_Action', 'dispatchIndex');
+        Helper::addRoute('dynamics-route', Dynamics_Plugin::DYNAMICS_ROUTE . "[slug]/", 'Dynamics_Action', 'dispatch');
+
         return _t('插件已经激活');
     }
 
-    // 禁用插件
+    /**
+     * 禁用插件
+     * @return string|void
+     */
     public static function deactivate()
     {
         Helper::removePanel(3, 'Dynamics/manage-dynamics.php');
@@ -55,14 +62,13 @@ class Dynamics_Plugin implements Typecho_Plugin_Interface
      * @param string $path
      * @param bool $isReturn
      * @return string
+     * @noinspection PhpDocMissingThrowsInspection
+     * @noinspection PhpInconsistentReturnPointsInspection
      */
     public static function homeUrl($path = "", $isReturn = false)
     {
         if (self::$homeUrl == null) {
-            try {
-                self::$homeUrl = Typecho_Common::url(Dynamics_Plugin::DYNAMICS_ROUTE, Typecho_Widget::widget('Widget_Options')->index);
-            } catch (Typecho_Exception $e) {
-            }
+            self::$homeUrl = Typecho_Common::url(Dynamics_Plugin::DYNAMICS_ROUTE, Typecho_Widget::widget('Widget_Options')->index);
         }
         $url = self::$homeUrl . $path;
         if ($isReturn) {
@@ -77,16 +83,15 @@ class Dynamics_Plugin implements Typecho_Plugin_Interface
      * @param string $path
      * @param bool $isReturn
      * @return string
+     * @noinspection PhpDocMissingThrowsInspection
+     * @noinspection PhpInconsistentReturnPointsInspection
      */
-    public static function themeDirUrl($path = "", $isReturn = false)
+    public static function themeUrl($path = "", $isReturn = false)
     {
-        if (self::$themeDirUrl == null) {
-            try {
-                self::$themeDirUrl = Typecho_Common::url('/Dynamics/' . Dynamics_Plugin::themeName() . "/", Typecho_Widget::widget('Widget_Options')->pluginUrl);
-            } catch (Typecho_Exception $e) {
-            }
+        if (self::$themeBaseUrl == null) {
+            self::$themeBaseUrl = Typecho_Common::url('/Dynamics/themes/' . Dynamics_Plugin::themeName() . "/", Typecho_Widget::widget('Widget_Options')->pluginUrl);
         }
-        $url = self::$themeDirUrl . $path;
+        $url = self::$themeBaseUrl . $path;
         if ($isReturn) {
             return $url;
         } else {
@@ -94,15 +99,48 @@ class Dynamics_Plugin implements Typecho_Plugin_Interface
         }
     }
 
+    /**
+     * @Deprecated 已弃用, 暂时保留
+     * @param string $path
+     * @param bool $isReturn
+     */
+    public static function themeDirUrl($path = "", $isReturn = false)
+    {
+        call_user_func("Dynamics_Plugin::themeUrl", $path, $isReturn);
+    }
+
+    /**
+     * 动态主题名字
+     * @return mixed
+     * @noinspection PhpDocMissingThrowsInspection
+     */
     public static function themeName()
     {
         if (self::$themeName == null) {
-            try {
-                self::$themeName = "themes/" . Typecho_Widget::widget('Widget_Options')->Plugin('Dynamics')->theme;
-            } catch (Typecho_Exception $e) {
-            }
+            self::$themeName = Typecho_Widget::widget('Widget_Options')->Plugin('Dynamics')->theme;
         }
         return self::$themeName;
+    }
+
+    /**
+     * 动态主题绝对路径
+     * @param string $path
+     * @return string
+     */
+    public static function themeFile($path = "")
+    {
+        return dirname(__FILE__) . "/themes/" . Dynamics_Plugin::themeName() . "/" . $path;
+    }
+
+    /**
+     * @Deprecated 已弃用, 暂时保留
+     * @param string $path
+     * @return string
+     * @noinspection PhpInconsistentReturnPointsInspection
+     */
+    public static function themeDir($path = "")
+    {
+        call_user_func("Dynamics_Plugin::themeFile", $path);
     }
 
     /**
@@ -110,13 +148,16 @@ class Dynamics_Plugin implements Typecho_Plugin_Interface
      * @param $did
      * @param bool $isReturn
      * @return string
+     * @noinspection PhpInconsistentReturnPointsInspection
      */
     public static function applyUrl($did, $isReturn = false)
     {
+        $slug = base64_encode($did);
+        $slug = str_replace('=', '', $slug) . '=';
         if ($isReturn) {
-            return self::homeUrl(base64_encode($did), true);
+            return self::homeUrl($slug, true);
         } else {
-            self::homeUrl(base64_encode($did), false);
+            self::homeUrl($slug, false);
         }
     }
 
@@ -128,18 +169,19 @@ class Dynamics_Plugin implements Typecho_Plugin_Interface
     public static function parseUrl($slug)
     {
         $did = base64_decode($slug);
-        return is_numeric($did) ? $did : null;
+        return intval($did) > 0 ? $did : NULL;
     }
 
     /**
      * 在主题中直接调用
      *
      * @access public
-     * @param null $pattern
-     * @param int $num
+     * @throws Typecho_Db_Exception
+     * @throws Typecho_Exception
      */
-    public static function output($pattern = NULL, $num = 5)
+    public static function output()
     {
+        $args = func_get_args();
         $action = new Dynamics_Action(
             Typecho_Request::getInstance(),
             Typecho_Response::getInstance()
@@ -147,6 +189,11 @@ class Dynamics_Plugin implements Typecho_Plugin_Interface
         $action->showPage();
     }
 
+    /**
+     * 动态实例
+     * @param array $params
+     * @return Dynamics
+     */
     public static function get($params = array())
     {
         $dynamics = new Dynamics(
@@ -157,6 +204,11 @@ class Dynamics_Plugin implements Typecho_Plugin_Interface
         return $dynamics;
     }
 
+    /**
+     * 动态单实例
+     * @param array $params
+     * @return Dynamics
+     */
     public static function getInstance($params = array())
     {
         if (self::$instance == null) {
@@ -165,6 +217,10 @@ class Dynamics_Plugin implements Typecho_Plugin_Interface
         return self::$instance;
     }
 
+    /**
+     * 获取动态主题名字列表
+     * @return array
+     */
     public static function getList()
     {
         $list = array();
@@ -180,7 +236,10 @@ class Dynamics_Plugin implements Typecho_Plugin_Interface
         return $list;
     }
 
-    // 插件配置面板
+    /**
+     * 插件配置面板
+     * @param Typecho_Widget_Helper_Form $form
+     */
     public static function config(Typecho_Widget_Helper_Form $form)
     {
         $radio = new Typecho_Widget_Helper_Form_Element_Text(
@@ -196,15 +255,21 @@ class Dynamics_Plugin implements Typecho_Plugin_Interface
         $form->addInput($radio);
 
         $radio = new Typecho_Widget_Helper_Form_Element_Radio(
-            'theme', self::getList(), 'default', _t('模板选择'), "选择一个动态的主题");
+            'theme', self::getList(), 'AlphaPure', _t('模板选择'), "选择一个动态的主题");
         $form->addInput($radio);
     }
 
-    // 个人用户配置面板
+    /**
+     * 个人用户配置面板
+     * @param Typecho_Widget_Helper_Form $form
+     */
     public static function personalConfig(Typecho_Widget_Helper_Form $form)
     {
     }
 
+    /**
+     * @param null $action
+     */
     public static function form($action = NULL)
     {
     }

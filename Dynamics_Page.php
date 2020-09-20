@@ -5,38 +5,24 @@
 
 class Dynamics_Page
 {
-    private $each_disNums; //每页显示的条目数
-    private $nums; //总条目数
-    private $current_page; //当前被选中的页
-    private $sub_pages; //每次显示的页数
-    private $pageNums; //总页数
-    private $page_array = array(); //用来构造分页的数组
+    private $each_disNums;
+    private $nums;
+    private $current_page;
+    private $sub_pages;
+    private $pageNums;
+    private $page_array = array();
     private $otherParams = array();
-    private $isAdmin;
     private $isPjax;
 
     /**
-     *
-     * __construct是SubPages的构造函数，用来在创建类的时候自动运行.
-     * @$each_disNums   每页显示的条目数
-     * @nums     总条目数
-     * @current_num     当前被选中的页
-     * @sub_pages       每次显示的页数
-     * @subPage_type    显示分页的类型
-     *
-     * 当@subPage_type=1的时候为普通分页模式
-     *    example：   共4523条记录,每页显示10条,当前第1/453页 [首页] [上页] [下页] [尾页]
-     *    当@subPage_type=2的时候为经典分页样式
-     *     example：   当前第1/453页 [首页] [上页] 1 2 3 4 5 6 7 8 9 10 [下页] [尾页]
+     * Dynamics_Page constructor.
      * @param $each_disNums
      * @param $nums
      * @param $current_page
      * @param $sub_pages
      * @param $otherParams
-     * @param bool $isAdmin
-     * @param $isPjax
      */
-    public function __construct($each_disNums, $nums, $current_page, $sub_pages, $otherParams, $isAdmin = true, $isPjax = false)
+    public function __construct($each_disNums, $nums, $current_page, $sub_pages, $otherParams)
     {
         $this->each_disNums = intval($each_disNums);
         $this->nums = intval($nums);
@@ -48,13 +34,12 @@ class Dynamics_Page
         $this->sub_pages = intval($sub_pages);
         $this->pageNums = ceil($nums / $each_disNums);
         $this->otherParams = $otherParams;
-        $this->isAdmin = $isAdmin;
-        $this->isPjax = $isPjax;
-
+        $this->isPjax = $otherParams["isPjax"];
     }
 
-    /*
-    用来给建立分页的数组初始化的函数。
+    /**
+     * 用来给建立分页的数组初始化的函数。
+     * @return array
      */
     public function initArray()
     {
@@ -64,9 +49,9 @@ class Dynamics_Page
         return $this->page_array;
     }
 
-    /*
-    construct_num_Page该函数使用来构造显示的条目
-    即使：[1][2][3][4][5][6][7][8][9][10]
+    /**
+     * construct_num_Page该函数使用来构造显示的条目
+     * @return array
      */
     public function construct_num_Page()
     {
@@ -94,9 +79,9 @@ class Dynamics_Page
         return $current_array;
     }
 
-    /*
-    构造经典模式的分页
-    当前第1/453页 [首页] [上页] 1 2 3 4 5 6 7 8 9 10 [下页] [尾页]
+    /**
+     * 构造经典模式的分页
+     * @return string
      */
     public function show()
     {
@@ -146,21 +131,12 @@ class Dynamics_Page
         return $str;
     }
 
+    /**
+     * @param $page
+     * @return string
+     */
     private function buildUrl($page)
     {
-        if ($this->isAdmin) {
-            return Typecho_Common::url('extending.php?' . http_build_query(array_merge($this->otherParams,
-                    array(
-                        'dynamicsPage' => $page,
-                    ))),
-                Typecho_Widget::widget('Widget_Options')->adminUrl);
-        } else {
-            return $this->currentUrl() . "?dynamicsPage=" . $page;
-        }
-    }
-
-    private function currentUrl()
-    {
-        return str_replace("?" . $_SERVER["QUERY_STRING"], "", Typecho_Request::getInstance()->getRequestUrl());
+        return Typecho_Request::getInstance()->makeUriByRequest('dynamicsPage=' . $page);
     }
 }
