@@ -8,7 +8,7 @@
  * @package AlphaPure
  * @author ShangJixin
  * @version 1.1
- * @link https://github.com/kraity/Dynamics/themes/AlphaPure/
+ * @link https://github.com/ShangJixin/Dynamics/tree/master/themes/AlphaPure
  */
 
 if (!defined('__TYPECHO_ROOT_DIR__')) exit;
