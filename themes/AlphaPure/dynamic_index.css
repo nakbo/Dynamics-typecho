@@ -222,6 +222,7 @@ pre {
     margin: 6px 0;
     padding: 16px;
 }
+
 @media (prefers-color-scheme: dark) {
     body{
         background: #000;
@@ -274,4 +275,5 @@ pre {
     pre {
         background: #252629;
     }
+
 }
