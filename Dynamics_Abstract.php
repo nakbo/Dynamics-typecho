@@ -128,9 +128,11 @@ class Dynamics_Abstract extends Widget_Abstract_Contents implements Widget_Inter
      * 动态创建时间
      * @param string $format
      */
-    public function created($format = "n\月j\日,Y  H:i:s")
+    public function created()
     {
-        echo date($format, $this->created);
+        $options = Typecho_Widget::widget('Widget_Options');
+        $config = $options->Plugin('Dynamics');
+        echo date($config->timeFormat, $this->created);
     }
 
     /**
