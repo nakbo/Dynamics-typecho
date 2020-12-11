@@ -5,7 +5,7 @@ include_once 'Dynamics.php';
  * 我的动态 - 南博助手
  * @package Dynamics
  * @author 权那他
- * @version 1.5
+ * @version 1.5.1
  * @link https://github.com/kraity/Dynamics
  */
 class Dynamics_Plugin implements Typecho_Plugin_Interface
@@ -254,9 +254,26 @@ class Dynamics_Plugin implements Typecho_Plugin_Interface
         ), '0', 'Pjax状态', '是否开启Pjax状态,未完善');
         $form->addInput($radio);
 
+        $radio = new Typecho_Widget_Helper_Form_Element_Text(
+            'timeFormat', null, 'n\月j\日,Y  H:i:s',
+            '动态日期格式', '');
+        $form->addInput($radio);
+
         $radio = new Typecho_Widget_Helper_Form_Element_Radio(
             'theme', self::getList(), 'AlphaPure', _t('模板选择'), "选择一个动态的主题");
         $form->addInput($radio);
+
+        $form->addInput(new Typecho_Widget_Helper_Form_Element_Textarea('templateInHome', NULL, '<li id="{{did}}" class="dynamics_list">
+    <div class="dynamic-author" itemprop="creator" itemscope="" itemtype="http://schema.org/Person">
+        <cite class="fn" itemprop="name">{{authorName}}</cite>
+    </div>
+    <div class="dynamic-meta">
+        <a href="{{url}}"><time itemprop="dynamicTime">{{created}}</time></a>
+    </div>
+    <div class="dynamic-content" itemprop="commentText">{{content}}</div>
+</li>', '<span style="color:red">[高级设置]</span>向主站输出动态列表 - 模板', '说明'));
+
+        $form->addInput(new Typecho_Widget_Helper_Form_Element_Radio('isHomePagenavgator', array(1 => '是', 0 => '否'), 1, '<span style="color:red">[高级设置]</span>向主站输出动态列表 - 是否提供翻页'));
     }
 
     /**
