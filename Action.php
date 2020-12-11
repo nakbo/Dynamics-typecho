@@ -197,7 +197,22 @@ class Dynamics_Action extends Typecho_Widget implements Widget_Interface_Do
         $this->thisIs = "page";
         $this->import("functions.php");
         $this->dynamics = Dynamics_Plugin::get($this->_params);
-        $this->import('page.php');
+        //$this->import('page.php');
+        $options = $this->config;
+        
+        while ($this->dynamics->next()){
+            $temple = $options->templateInHome;
+            //$temple = str_replace(array('{{did}}','{{avatar}}','{{authorName}}','{{url}}','{{created}}','{{content}}'),array($this->dynamics->did,$this->dynamics->avatar,$this->dynamics->authorName,$this->dynamics->url,$this->dynamics->created,$this->dynamics->content()),$temple);
+            $temple = str_replace(array('{{did}}','{{authorName}}','{{url}}','{{created}}','{{content}}'),array($this->dynamics->did,$this->dynamics->authorName,$this->dynamics->url,date($options->timeFormat, $this->dynamics->created),$this->dynamics->content),$temple);
+            echo $temple;
+            //var_dump();
+            //$options->templateInHome;
+            //echo $this->dynamics->content();
+        }
+
+        if($options->isHomePagenavgator){
+            $this->dynamics->navigator();
+        }
     }
 
     /**
