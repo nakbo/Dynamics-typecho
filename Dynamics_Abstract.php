@@ -164,7 +164,8 @@ class Dynamics_Abstract extends Widget_Abstract_Contents implements Widget_Inter
      */
     public function modified()
     {
-        echo $this->modified;
+        $this->action();
+        echo date($this->config->timeFormat, $this->modified);
     }
 
     /**
