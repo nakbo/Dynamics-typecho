@@ -5,7 +5,7 @@ include_once 'Dynamics.php';
  * 我的动态 - 南博助手
  * @package Dynamics
  * @author 权那他
- * @version 1.5.1
+ * @version 1.5
  * @link https://github.com/kraity/Dynamics
  */
 class Dynamics_Plugin implements Typecho_Plugin_Interface
@@ -249,14 +249,24 @@ class Dynamics_Plugin implements Typecho_Plugin_Interface
 
         $radio = new Typecho_Widget_Helper_Form_Element_Radio(
             'isPjax', array(
-            '0' => '未启用',
-            '1' => '已启用',
-        ), '0', 'Pjax状态', '是否开启Pjax状态,未完善');
+            '0' => '使用 JavaScript 进行跳转',
+            '1' => '使用 HTML (a 标签)进行跳转',
+        ), '1', '动态页面部分的链接跳转实现', '使用 HTML (a 标签) 方式进行跳转，有利于部分【动态主题】的 Pjax 实现');
         $form->addInput($radio);
 
         $radio = new Typecho_Widget_Helper_Form_Element_Text(
             'timeFormat', null, 'n\月j\日,Y  H:i:s',
             '动态日期格式', '');
+        $form->addInput($radio);
+
+        $radio = new Typecho_Widget_Helper_Form_Element_Text(
+            'avatarRandomString', null, 'mm',
+            '当无 Gravatar 头像时，使用的随机方案', '可以填些什么？可参照 <a href="https://en.gravatar.com/site/implement/images/#default-image" target="_blank">Gravatar 的官方说明</a>');
+        $form->addInput($radio);
+
+        $radio = new Typecho_Widget_Helper_Form_Element_Text(
+            'avatarSize', null, '45',
+            '头像图像大小', '调用不合适尺寸的图片会对前端加载速度造成影响，请按照自己的需求选择输出合适尺寸的图片<br>单位：px');
         $form->addInput($radio);
 
         $radio = new Typecho_Widget_Helper_Form_Element_Radio(
@@ -265,13 +275,14 @@ class Dynamics_Plugin implements Typecho_Plugin_Interface
 
         $form->addInput(new Typecho_Widget_Helper_Form_Element_Textarea('templateInHome', NULL, '<li id="{{did}}" class="dynamics_list">
     <div class="dynamic-author" itemprop="creator" itemscope="" itemtype="http://schema.org/Person">
+        <span itemprop="image"><img class="avatar" src="{{avatar}}" alt="{{authorName}}" width="32" height="32"></span>
         <cite class="fn" itemprop="name">{{authorName}}</cite>
     </div>
     <div class="dynamic-meta">
         <a href="{{url}}"><time itemprop="dynamicTime">{{created}}</time></a>
     </div>
     <div class="dynamic-content" itemprop="commentText">{{content}}</div>
-</li>', '<span style="color:red">[高级设置]</span>向主站输出动态列表 - 模板', '说明'));
+</li>', '<span style="color:red">[高级设置]</span>向主站输出动态列表 - 模板', '可使用参数：<code>{{did}}</code> <code>{{authorName}}</code> <code>{{url}}</code> <code>{{created}}</code> <code>{{content}}</code> <code>{{avatar}}</code><br>前台主题调用方法：<code>Dynamics_Plugin::output();</code>'));
 
         $form->addInput(new Typecho_Widget_Helper_Form_Element_Radio('isHomePagenavgator', array(1 => '是', 0 => '否'), 1, '<span style="color:red">[高级设置]</span>向主站输出动态列表 - 是否提供翻页'));
     }
