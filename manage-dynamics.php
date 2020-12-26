@@ -164,8 +164,8 @@ include 'footer.php';
 ?>
 
 <script src="<?php $options->adminStaticUrl('js', 'pagedown.js?v=' . $suffixVersion); ?>"></script>
-<script src="<?php $options->adminStaticUrl('js', 'pagedown-extra.js?v=' . $suffixVersion); ?>"></script>
-<script src="<?php $options->adminStaticUrl('js', 'diff.js?v=' . $suffixVersion); ?>"></script>
+<script src="<?php $options->pluginUrl('Dynamics/js/pagedown-extra.js?v=' . $suffixVersion); ?>"></script>
+<script src="<?php $options->pluginUrl('Dynamics/js/diff.js?v=' . $suffixVersion); ?>"></script>
 
 <script>
     $(document).ready(function () {
