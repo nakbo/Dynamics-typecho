@@ -13,6 +13,7 @@ class Dynamics_Abstract extends Widget_Abstract_Contents implements Widget_Inter
     public $modified;
     public $status;
     public $url;
+    public $avatar;
 
     /**
      * 作者id
@@ -68,9 +69,25 @@ class Dynamics_Abstract extends Widget_Abstract_Contents implements Widget_Inter
      * @param string $rating
      * @param string $default
      */
-    public function avatar($size = 200, $rating = 'X', $default = 'mm')
+    public function avatar($size = '', $rating = '', $default = '')
     {
+        $this->action();
+        $rating = $this->options->commentsAvatarRating;
+        $default = $this->config->avatarRandomString;
+        $size = $this->config->avatarSize;
         echo Typecho_Common::gravatarUrl($this->mail, $size, $rating, $default, $this->request->isSecure());
+    }
+
+    /**
+     * @param mixed $avatar
+     */
+    public function setAvatar($size = '', $rating = '', $default = '')
+    {
+        $this->action();
+        $rating = $this->options->commentsAvatarRating;
+        $default = $this->config->avatarRandomString;
+        $size = $this->config->avatarSize;
+        $this->avatar = Typecho_Common::gravatarUrl($this->mail, $size, $rating, $default, $this->request->isSecure());
     }
 
     /**
@@ -130,9 +147,8 @@ class Dynamics_Abstract extends Widget_Abstract_Contents implements Widget_Inter
      */
     public function created()
     {
-        $options = Typecho_Widget::widget('Widget_Options');
-        $config = $options->Plugin('Dynamics');
-        echo date($config->timeFormat, $this->created);
+        $this->action();
+        echo date($this->config->timeFormat, $this->created);
     }
 
     /**
@@ -198,5 +214,6 @@ class Dynamics_Abstract extends Widget_Abstract_Contents implements Widget_Inter
     {
         $this->db = Typecho_Db::get();
         $this->options = Typecho_Widget::widget('Widget_Options');
+        $this->config = $this->options->Plugin('Dynamics');
     }
 }
