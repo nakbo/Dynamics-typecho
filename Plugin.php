@@ -5,7 +5,7 @@ include_once 'Dynamics.php';
  * 我的动态 - 南博助手
  * @package Dynamics
  * @author 权那他
- * @version 1.6
+ * @version 1.6.1
  * @link https://github.com/kraity/Dynamics
  */
 class Dynamics_Plugin implements Typecho_Plugin_Interface
@@ -282,7 +282,13 @@ class Dynamics_Plugin implements Typecho_Plugin_Interface
         <a href="{{url}}"><time itemprop="dynamicTime">{{created}}</time></a>
     </div>
     <div class="dynamic-content" itemprop="commentText">{{content}}</div>
-</li>', '<span style="color:red">[高级设置]</span>向主站输出动态列表 - 模板', '可使用参数：<code>{{did}}</code> <code>{{authorName}}</code> <code>{{url}}</code> <code>{{created}}</code> <code>{{content}}</code> <code>{{avatar}}</code><br>前台主题调用方法：<code>Dynamics_Plugin::output();</code>'));
+</li>', '<span style="color:red">[高级设置]</span>向主站输出动态列表 - 模板', '可使用参数：<code>{{did}}</code> <code>{{authorName}}</code> <code>{{url}}</code> <code>{{created}}</code> <code>{{content}}</code> <code>{{avatar}}</code> <code>{{authorId}}</code> <code>{{modified}}</code> <code>{{status}}</code> <code>{{text}}</code> <code>{{cuttext}}</code><br>前台主题调用方法：<code>Dynamics_Plugin::output();</code>'));
+
+        $radio = new Typecho_Widget_Helper_Form_Element_Text(
+            'cutTextLength', null, '100',
+            '<span style="color:red">[高级设置]</span>向主站输出动态列表 {{cuttext}} 保留长度', '可以自定义 {{cuttext}} 参数提取的文字数量，默认为100');
+        $form->addInput($radio);
+
 
         $form->addInput(new Typecho_Widget_Helper_Form_Element_Radio('isHomePagenavgator', array(1 => '是', 0 => '否'), 1, '<span style="color:red">[高级设置]</span>向主站输出动态列表 - 是否提供翻页'));
     }
