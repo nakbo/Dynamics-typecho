@@ -147,6 +147,7 @@ class Dynamics_Action extends Typecho_Widget implements Widget_Interface_Do
         $this->dynamic->setText($dic['text']);
         $this->dynamic->setCreated($dic['created']);
         $this->dynamic->setModified($dic['modified']);
+        $this->dynamic->setAvatar($dic['avatar']);
 
         /* 引入布局 */
         $this->import('post.php');
@@ -203,9 +204,9 @@ class Dynamics_Action extends Typecho_Widget implements Widget_Interface_Do
         while ($this->dynamics->next()){
             $temple = $options->templateInHome;
             //$temple = str_replace(array('{{did}}','{{avatar}}','{{authorName}}','{{url}}','{{created}}','{{content}}'),array($this->dynamics->did,$this->dynamics->avatar,$this->dynamics->authorName,$this->dynamics->url,$this->dynamics->created,$this->dynamics->content()),$temple);
-            $temple = str_replace(array('{{did}}','{{authorName}}','{{url}}','{{created}}','{{content}}'),array($this->dynamics->did,$this->dynamics->authorName,$this->dynamics->url,date($options->timeFormat, $this->dynamics->created),$this->dynamics->content),$temple);
+            $temple = str_replace(array('{{did}}','{{authorName}}','{{url}}','{{created}}','{{content}}','{{avatar}}'),array($this->dynamics->did,$this->dynamics->authorName,$this->dynamics->url,date($options->timeFormat, $this->dynamics->created),$this->dynamics->content,$this->dynamics->avatar),$temple);
             echo $temple;
-            //var_dump();
+            //var_dump($this->dynamics->avatar);
             //$options->templateInHome;
             //echo $this->dynamics->content();
         }
