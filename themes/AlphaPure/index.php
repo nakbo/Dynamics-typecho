@@ -7,8 +7,8 @@
  *
  * @package AlphaPure
  * @author ShangJixin
- * @version 1.1
- * @link https://github.com/kraity/Dynamics/tree/master/themes/AlphaPure
+ * @version 1.0
+ * @link https://github.com/kraity/Dynamics
  */
 
 if (!defined('__TYPECHO_ROOT_DIR__')) exit;
@@ -27,10 +27,10 @@ include('header.php');
 <div class="nabo-dynamics">
 <?php while ($this->dynamics->next()) : ?>
     <div class="dynamic-content">
-        <?php echo dynamicReplacer($this->dynamics->content); ?>
+        <?php echo dynamicReplacer($this->dynamics); ?>
     </div>
     <div class="dynamic-meta">
-        <span class="time"><a href="<?php $this->dynamics->url() ?>"><?php $this->dynamics->created() ?>&nbsp;&nbsp;&raquo;&nbsp;详情</a></span>
+        <span class="time"><a href="<?php $this->dynamics->url() ?>"><?php $this->dynamics->created() ?>&nbsp;in&nbsp;<?php $this->dynamics->deviceTag() ?>&nbsp;&raquo;&nbsp;详情</a></span>
     </div>
 <?php endwhile; ?>
 </div>
