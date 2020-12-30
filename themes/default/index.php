@@ -63,6 +63,7 @@ if (!defined('__TYPECHO_ROOT_DIR__')) exit;
             <a href="<?php $this->dynamics->url() ?>">
                 <time itemprop="dynamicTime"><?php $this->dynamics->created() ?></time>
             </a>
+            <span><?php $this->dynamic->deviceTag() ?></span>
         </div>
         <div class="dynamic-content" itemprop="commentText"><?php $this->dynamics->content() ?></div>
     </li>
