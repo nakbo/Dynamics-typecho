@@ -67,6 +67,7 @@ class Dynamics extends Dynamics_Abstract
             $this->setCreated($dic['created']);
             $this->setModified($dic['modified']);
             $this->setAvatar($dic['avatar']);
+            $this->setAgent($dic['agent']);
             $this->_position++;
             return true;
         } else {
