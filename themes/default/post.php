@@ -18,6 +18,7 @@ if (!defined('__TYPECHO_ROOT_DIR__')) exit;
             <a href="<?php $this->dynamic->url() ?>">
                 <time itemprop="dynamicTime" datetime="{date}"><?php $this->dynamic->created() ?></time>
             </a>
+            <span><?php $this->dynamic->deviceTag() ?></span>
         </div>
         <div class="dynamic-content" itemprop="commentText"><?php $this->dynamic->content() ?></div>
     </li>
