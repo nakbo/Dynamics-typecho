@@ -14,6 +14,105 @@ class Dynamics_Abstract extends Widget_Abstract_Contents implements Widget_Inter
     public $status;
     public $url;
     public $avatar;
+    public $agent;
+
+    /**
+     * @param mixed $authorId
+     */
+    public function setAgent($agent)
+    {
+        $this->agent = $agent;
+    }
+
+    /**
+     * 获取 User Agent
+     */
+    public function agent()
+    {
+        echo $this->agent;
+    }
+
+    /** 
+     * 获取操作系统信息 
+     */
+    public function deviceOs()
+    {
+        $agent = $this->agent;
+        if (preg_match('/win/i', $agent)) {
+            if (preg_match('/nt 6.0/i', $agent)) {
+                $os = 'Windows Vista';
+            } else if (preg_match('/nt 6.1/i', $agent)) {
+                $os = 'Windows 7';
+            } else if (preg_match('/nt 5.1/i', $agent)) {
+                $os = 'Windows XP';
+            } else if (preg_match('/nt 6.2/i', $agent)) {
+                $os = 'Windows 8';
+            } else if (preg_match('/nt 6.3/i', $agent)) {
+                $os = 'Windows 8.1';
+            } else if (preg_match('/nt 10.0/i', $agent)) {
+                $os = 'Windows 10';
+            } else if (preg_match('/nt 5/i', $agent)) {
+                $os = 'Windows 2000';
+            } else {
+                $os = 'Windows';
+            }
+        } else if (preg_match('/Android\s([^\s|;]+)/i', $agent, $regs)) {
+            $os = 'Android' . ' ' . $regs[1];
+        } else if (preg_match('/iPad/i', $agent)) {
+            $os = 'iPad';
+        } else if (preg_match('/ubuntu/i', $agent)) {
+            $os = 'Ubuntu';
+        } else if (preg_match('/linux/i', $agent)) {
+            $os = 'Linux';
+        } else if (preg_match('/iPhone/i', $agent)) {
+            $os = 'iPhone';
+        } else if (preg_match('/macintosh/i', $agent)) {
+            $os = 'Mac OS';
+        } else if (preg_match('/unix/i', $agent)) {
+            $os = 'Unix';
+        } else if (preg_match('/symbian/i', $agent)) {
+            $os = 'SymbianOS';
+        } else if (preg_match('/Typecho/i', $agent)) {
+            $os = 'Typecho.org';
+        } else {
+            $os = '未知设备';
+        }
+        return $os;
+    }
+
+    /**
+     * 判断南博客户端
+     */
+    public function deviceTag()
+    {
+        $agent = $this->agent;
+	    if (preg_match('/Kraitnabo\/([^\s|;]+)/i', $agent, $regs)) {
+            $return = '南博 '. $regs[1];
+        } else if($agent == NULL){
+            //老版本南博并没有存储UA串
+            $return = '南博 (旧版)';
+        } else {
+            $return = $this->deviceInfo();
+        }
+ 
+        echo $return;
+    }
+
+    /**
+     * 判断手机具体型号
+     */
+    public function deviceInfo()
+    {
+        $agent = $this->agent;
+        //\\(.*;\\s(.*)\\sBuild.*\\)
+	    if (preg_match('/\(.*;\s(.*)\sBuild.*\)/i', $agent, $regs)) {
+            $return = $regs[1];
+	    } else {
+            $return = $this->deviceOs();
+        }
+ 
+        return $return;
+    }
 
     /**
      * 作者id
