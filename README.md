@@ -10,4 +10,4 @@
 可以在themes目录下使用自己开发的动态主题，类似ty主题，然后在我的动态的插件设置选择主题
 
 ## 使用教程
-https://krait.cn/major/2015.html
+https://docs.nabo.krait.cn/#/course-dynamics
