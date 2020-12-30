@@ -21,7 +21,7 @@ body {
     height: auto;
     margin: 0 auto;
     display: block;
-    max-height: 200px;
+    /*max-height: 200px;*/
     margin: 0;
 }
 .nabo-dynamics .dynamic-content a {
@@ -85,8 +85,8 @@ body {
     max-width: 960px;
     margin-right: auto;
     margin-left: auto;
-    padding: 0 20px;
     min-height: calc(100vh - 100px);
+    padding: 0 20px;
 }
 .miui-style {
     color: #4e4e4e;
@@ -97,6 +97,10 @@ body {
 }
 figure{
     margin: 0;
+}
+figcaption.article-holder {
+    font-size: 12px;
+    text-align: center;
 }
 footer {
     font-size: 12px;
@@ -222,7 +226,6 @@ pre {
     margin: 6px 0;
     padding: 16px;
 }
-
 @media (prefers-color-scheme: dark) {
     body{
         background: #000;
@@ -275,5 +278,4 @@ pre {
     pre {
         background: #252629;
     }
-
 }
