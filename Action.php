@@ -148,6 +148,7 @@ class Dynamics_Action extends Typecho_Widget implements Widget_Interface_Do
         $this->dynamic->setCreated($dic['created']);
         $this->dynamic->setModified($dic['modified']);
         $this->dynamic->setAvatar($dic['avatar']);
+        $this->dynamic->setAgent($dic['agent']);
 
         /* 引入布局 */
         $this->import('post.php');
@@ -204,7 +205,7 @@ class Dynamics_Action extends Typecho_Widget implements Widget_Interface_Do
         while ($this->dynamics->next()){
             $temple = $options->templateInHome;
             //$temple = str_replace(array('{{did}}','{{avatar}}','{{authorName}}','{{url}}','{{created}}','{{content}}'),array($this->dynamics->did,$this->dynamics->avatar,$this->dynamics->authorName,$this->dynamics->url,$this->dynamics->created,$this->dynamics->content()),$temple);
-            $temple = str_replace(array('{{did}}','{{authorName}}','{{url}}','{{created}}','{{content}}','{{avatar}}','{{authorId}}','{{modified}}','{{status}}','{{text}}','{{cuttext}}'),array($this->dynamics->did,$this->dynamics->authorName,$this->dynamics->url,date($options->timeFormat, $this->dynamics->created),$this->dynamics->content,$this->dynamics->avatar,$this->dynamics->authorId,date($options->timeFormat, $this->dynamics->modified),$this->dynamics->status,$this->dynamics->text,$this->subtext($this->dynamics->text,$options->cutTextLength)),$temple);
+            $temple = str_replace(array('{{did}}','{{authorName}}','{{url}}','{{created}}','{{content}}','{{avatar}}','{{authorId}}','{{modified}}','{{status}}','{{text}}','{{cuttext}}'),array($this->dynamics->did,$this->dynamics->authorName,$this->dynamics->url,date($options->timeFormat, $this->dynamics->created),$this->dynamics->content,$this->dynamics->avatar,$this->dynamics->authorId,date($options->timeFormat, $this->dynamics->modified),$this->dynamics->status,$this->dynamics->text,$this->subtext(strip_tags($this->dynamics->content),$options->cutTextLength)),$temple);
             echo $temple;
             //var_dump($this->dynamics->avatar);
             //$options->templateInHome;
@@ -280,6 +281,7 @@ class Dynamics_Action extends Typecho_Widget implements Widget_Interface_Do
         $dynamic['authorId'] = Typecho_Cookie::get('__typecho_uid');
         $dynamic['modified'] = $date;
         $dynamic['created'] = $date;
+        $dynamic['agent'] = $_SERVER['HTTP_USER_AGENT'];
         /** 插入数据 */
         $dynamicId = $this->db->query($this->db->insert('table.dynamics')->rows($dynamic));
         $data = $this->db->fetchRow($this->db->select('table.dynamics.*, table.users.screenName author_name')
