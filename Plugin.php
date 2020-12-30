@@ -5,8 +5,8 @@ include_once 'Dynamics.php';
  * 我的动态 - 南博助手
  * @package Dynamics
  * @author 权那他
- * @version 1.6.1
- * @link https://github.com/kraity/Dynamics
+ * @version 1.7
+ * @link https://github.com/krait-team/Dynamics-typecho
  */
 class Dynamics_Plugin implements Typecho_Plugin_Interface
 {
@@ -26,16 +26,33 @@ class Dynamics_Plugin implements Typecho_Plugin_Interface
     {
         $db = Typecho_Db::get();
         $prefix = $db->getPrefix();
-        $db->query('CREATE TABLE IF NOT EXISTS `' . $prefix . 'dynamics` (
-		  `did` int(11) unsigned NOT NULL AUTO_INCREMENT,
-		  `authorId` int(11) DEFAULT NULL,
-		  `text` text,
-		  `status` varchar(16) DEFAULT "publish",
-		  `created` int(10)	 DEFAULT 0,
-		  `modified` int(10)  DEFAULT 0,
-		  PRIMARY KEY (`did`)
-		) DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;');
 
+        if ($db->fetchRow($db->query("SHOW TABLES LIKE '{$prefix}dynamics';"))) {
+            /* 表更新 解决老版本南博动态插件没有UA键值的问题 */
+            $rows = $db->fetchRow($db->select()->from('table.dynamics'));
+            $alter = array(
+                "agent" => 'ALTER TABLE `' . $prefix . 'dynamics` ADD `agent` varchar(511) DEFAULT NULL;',
+            );
+            foreach ($alter as $column => $query) {
+                if (!array_key_exists($column, $rows)) {
+                    $db->query($query);
+                }
+            }
+        } else {
+            /* 从未安装过南博动态插件 进行完整的建表 */
+            $db->query('CREATE TABLE IF NOT EXISTS `' . $prefix . 'dynamics` (
+                `did` int(11) unsigned NOT NULL AUTO_INCREMENT,
+                `authorId` int(11) DEFAULT NULL,
+                `text` text,
+                `status` varchar(16) DEFAULT "publish",
+                `created` int(10)	 DEFAULT 0,
+                `modified` int(10)  DEFAULT 0,
+                `agent` varchar(511) DEFAULT NULL,
+                PRIMARY KEY (`did`)
+              ) DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;');
+        }
+
+        //ALTER TABLE `typecho_dynamics` ADD `ua` TEXT NULL DEFAULT NULL AFTER `modified`;
         Helper::addPanel(3, 'Dynamics/manage-dynamics.php', '我的动态', '我的动态列表', 'administrator');
         Helper::addAction('dynamics-manage', 'Dynamics_Action');
         Helper::addRoute('dynamics-index-route', Dynamics_Plugin::DYNAMICS_ROUTE, 'Dynamics_Action', 'dispatchIndex');
