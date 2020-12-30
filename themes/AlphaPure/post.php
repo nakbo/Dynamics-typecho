@@ -9,17 +9,14 @@ $pageType = 'single';
 include('header.php');
 ?>
 
-
 <h1 class="miui-style">动态内容</h1>
 <div class="nabo-dynamics">
     <div class="dynamic-content">
-        <?php echo dynamicReplacer($this->dynamic->content); ?>
+        <?php echo dynamicReplacer($this->dynamic); ?>
     </div>
     <div class="dynamic-meta">
-        <span class="time"><a href="<?php $this->dynamic->url() ?>"><?php $this->dynamic->created() ?></a></span>
+        <span class="time"><a href="<?php $this->dynamic->url() ?>"><?php $this->dynamic->created(); ?></a>&nbsp;in&nbsp;<?php $this->dynamic->deviceTag() ?></span>
     </div>
 </div>
-
-
 
 <?php include('footer.php'); ?>
