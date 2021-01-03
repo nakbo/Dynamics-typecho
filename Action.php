@@ -347,3 +347,4 @@ class Dynamics_Action extends Typecho_Widget implements Widget_Interface_Do
         $this->on($this->request->is('do=deletes'))->deletes();
         $this->response->redirect(Typecho_Common::url('extending.php?panel=Dynamics%2Fmanage-dynamics.php', $this->options->adminUrl));
     }
+}
