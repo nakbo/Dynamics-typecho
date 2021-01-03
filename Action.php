@@ -200,21 +200,11 @@ class Dynamics_Action extends Typecho_Widget implements Widget_Interface_Do
         $this->import("functions.php");
         $this->dynamics = Dynamics_Plugin::get($this->_params);
         //$this->import('page.php');
-        $options = $this->config;
-        
-        while ($this->dynamics->next()){
-            $temple = $options->templateInHome;
-            //$temple = str_replace(array('{{did}}','{{avatar}}','{{authorName}}','{{url}}','{{created}}','{{content}}'),array($this->dynamics->did,$this->dynamics->avatar,$this->dynamics->authorName,$this->dynamics->url,$this->dynamics->created,$this->dynamics->content()),$temple);
-            $temple = str_replace(array('{{did}}','{{authorName}}','{{url}}','{{created}}','{{content}}','{{avatar}}','{{authorId}}','{{modified}}','{{status}}','{{text}}','{{cuttext}}'),array($this->dynamics->did,$this->dynamics->authorName,$this->dynamics->url,date($options->timeFormat, $this->dynamics->created),$this->dynamics->content,$this->dynamics->avatar,$this->dynamics->authorId,date($options->timeFormat, $this->dynamics->modified),$this->dynamics->status,$this->dynamics->text,$this->subtext(strip_tags($this->dynamics->content),$options->cutTextLength)),$temple);
-            echo $temple;
-            //var_dump($this->dynamics->avatar);
-            //$options->templateInHome;
-            //echo $this->dynamics->content();
+        $path = dirname(__FILE__).'/page.php';
+        if (file_exists($path)){
+            require_once $path;
         }
-
-        if($options->isHomePagenavgator){
-            $this->dynamics->navigator();
-        }
+        //$options = $this->config;
     }
 
     /**
@@ -357,16 +347,3 @@ class Dynamics_Action extends Typecho_Widget implements Widget_Interface_Do
         $this->on($this->request->is('do=deletes'))->deletes();
         $this->response->redirect(Typecho_Common::url('extending.php?panel=Dynamics%2Fmanage-dynamics.php', $this->options->adminUrl));
     }
-
-    /**
-     * 切割文本省略
-     */
-    public function subtext($text, $length)
-    {
-        if(mb_strlen($text, 'utf8') > $length) {
-            return mb_substr($text, 0, $length, 'utf8').'...';
-        } else {
-            return $text;
-        }
-    }
-}
