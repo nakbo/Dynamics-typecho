@@ -32,12 +32,12 @@ class Dynamics_Abstract extends Widget_Abstract_Contents implements Widget_Inter
         echo $this->agent;
     }
 
-    /** 
+        /** 
      * 获取操作系统信息 
      */
-    public function deviceOs()
+    public function deviceOs($agent = null)
     {
-        $agent = $this->agent;
+        $agent = $agent != null ? $agent : $this->agent;
         if (preg_match('/win/i', $agent)) {
             if (preg_match('/nt 6.0/i', $agent)) {
                 $os = 'Windows Vista';
@@ -83,16 +83,16 @@ class Dynamics_Abstract extends Widget_Abstract_Contents implements Widget_Inter
     /**
      * 判断南博客户端
      */
-    public function deviceTag()
+    public function deviceTag($agent = null)
     {
-        $agent = $this->agent;
+        $agent = $agent != null ? $agent : $this->agent;
 	    if (preg_match('/Kraitnabo\/([^\s|;]+)/i', $agent, $regs)) {
             $return = '南博 '. $regs[1];
         } else if($agent == NULL){
             //老版本南博并没有存储UA串
             $return = '南博 (旧版)';
         } else {
-            $return = $this->deviceInfo();
+            $return = $this->deviceInfo($agent);
         }
  
         echo $return;
@@ -101,14 +101,14 @@ class Dynamics_Abstract extends Widget_Abstract_Contents implements Widget_Inter
     /**
      * 判断手机具体型号
      */
-    public function deviceInfo()
+    public function deviceInfo($agent = null)
     {
-        $agent = $this->agent;
+        $agent = $agent != null ? $agent : $this->agent;
         //\\(.*;\\s(.*)\\sBuild.*\\)
 	    if (preg_match('/\(.*;\s(.*)\sBuild.*\)/i', $agent, $regs)) {
             $return = $regs[1];
 	    } else {
-            $return = $this->deviceOs();
+            $return = $this->deviceOs($agent);
         }
  
         return $return;
