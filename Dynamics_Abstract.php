@@ -35,51 +35,26 @@ class Dynamics_Abstract extends Widget_Abstract_Contents implements Widget_Inter
         /** 
      * 获取操作系统信息 
      */
-    public function deviceOs($agent = null)
+     function deviceOs($agent = null)
     {
         $agent = $agent != null ? $agent : $this->agent;
-        if (preg_match('/win/i', $agent)) {
-            if (preg_match('/nt 6.0/i', $agent)) {
-                $os = 'Windows Vista';
-            } else if (preg_match('/nt 6.1/i', $agent)) {
-                $os = 'Windows 7';
-            } else if (preg_match('/nt 5.1/i', $agent)) {
-                $os = 'Windows XP';
-            } else if (preg_match('/nt 6.2/i', $agent)) {
-                $os = 'Windows 8';
-            } else if (preg_match('/nt 6.3/i', $agent)) {
-                $os = 'Windows 8.1';
-            } else if (preg_match('/nt 10.0/i', $agent)) {
-                $os = 'Windows 10';
-            } else if (preg_match('/nt 5/i', $agent)) {
-                $os = 'Windows 2000';
-            } else {
-                $os = 'Windows';
-            }
-        } else if (preg_match('/Android\s([^\s|;]+)/i', $agent, $regs)) {
-            $os = 'Android' . ' ' . $regs[1];
-        } else if (preg_match('/iPad/i', $agent)) {
-            $os = 'iPad';
-        } else if (preg_match('/ubuntu/i', $agent)) {
-            $os = 'Ubuntu';
-        } else if (preg_match('/linux/i', $agent)) {
-            $os = 'Linux';
-        } else if (preg_match('/iPhone/i', $agent)) {
-            $os = 'iPhone';
-        } else if (preg_match('/macintosh/i', $agent)) {
-            $os = 'Mac OS';
-        } else if (preg_match('/unix/i', $agent)) {
-            $os = 'Unix';
-        } else if (preg_match('/symbian/i', $agent)) {
-            $os = 'SymbianOS';
-        } else if (preg_match('/Typecho/i', $agent)) {
-            $os = 'Typecho.org';
-        } else {
-            $os = '未知设备';
+        $device_other = array("ipad"=>"iPad","ubuntu"=>"Ubuntu","linux"=>"Linux","iphone"=>"iPhone","macintosh"=>"Mac OS","unix"=>"Unix","symbian"=>"SymbianOS","typecho"=>"Typecho.org");
+        if (preg_match('/Android\s([^\s|;]+)/i', $agent, $regs)) {
+            $os = 'Android ' . $regs[1];
+        } else if (preg_match('/win/i', $agent)) {
+           $device_win=array("nt 6.0"=>"Windows Vista","nt 6.1"=>"Windows 7","nt 5.1"=>"Windows XP","nt 6.2"=>"Windows 8","nt 6.3"=>"Windows 8.1","nt 10.0"=>"Windows 10","nt 5"=>"Windows 2000");
+          if(preg_match('/(nt 6.0|nt 6.1|nt 5.1|nt 6.2|nt 6.3|nt 10.0|nt 5)/i', $agent,$regs)){
+               $os = $device_win[strtolower($regs[0])];
+           }else{
+               $os = 'Windows'; 
+           }
+        } else  if (preg_match('/(iPad|ubuntu|linux|iPhone|macintosh|symbian|Typecho)/i', $agent,$regs)) {
+              $os = $device_other[strtolower($regs[0])];
+        }else{
+                    $os = '未知设备';
         }
-        return $os;
-    }
-
+        return $os;                 
+      }
     /**
      * 判断南博客户端
      */
