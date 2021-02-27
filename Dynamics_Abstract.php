@@ -35,12 +35,12 @@ class Dynamics_Abstract extends Widget_Abstract_Contents implements Widget_Inter
         /** 
      * 获取操作系统信息 
      */
-     function deviceOs($agent = null)
+    public function deviceOs($agent = null)
     {
         $agent = $agent != null ? $agent : $this->agent;
         $device_other = array("ipad"=>"iPad","ubuntu"=>"Ubuntu","linux"=>"Linux","iphone"=>"iPhone","macintosh"=>"Mac OS","unix"=>"Unix","symbian"=>"SymbianOS","typecho"=>"Typecho.org");
         if (preg_match('/Android\s([^\s|;]+)/i', $agent, $regs)) {
-            $os = 'Android ' . $regs[1];
+               $os = 'Android ' . $regs[1];
         } else if (preg_match('/win/i', $agent)) {
            $device_win=array("nt 6.0"=>"Windows Vista","nt 6.1"=>"Windows 7","nt 5.1"=>"Windows XP","nt 6.2"=>"Windows 8","nt 6.3"=>"Windows 8.1","nt 10.0"=>"Windows 10","nt 5"=>"Windows 2000");
           if(preg_match('/(nt 6.0|nt 6.1|nt 5.1|nt 6.2|nt 6.3|nt 10.0|nt 5)/i', $agent,$regs)){
@@ -49,9 +49,9 @@ class Dynamics_Abstract extends Widget_Abstract_Contents implements Widget_Inter
                $os = 'Windows'; 
            }
         } else  if (preg_match('/(iPad|ubuntu|linux|iPhone|macintosh|symbian|Typecho)/i', $agent,$regs)) {
-              $os = $device_other[strtolower($regs[0])];
+               $os = $device_other[strtolower($regs[0])];
         }else{
-                    $os = '未知设备';
+               $os = '未知设备';
         }
         return $os;                 
       }
