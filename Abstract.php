@@ -136,7 +136,7 @@ class Dynamics_Abstract extends Typecho_Widget
                     "6.0" => "Vista",
                     "5.1" => "XP",
                     "5" => "2000"
-                ][strtolower($regs[1])];
+                ][$regs[1]];
         } else if (preg_match('/(iPad|ubuntu|linux|iPhone|macintosh|symbian|typecho)/i', $agent, $regs)) {
             return [
                 "ipad" => "iPad",
