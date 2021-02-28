@@ -35,7 +35,12 @@ class Dynamics_Abstract extends Typecho_Widget
     /**
      * @var boolean
      */
-    public $visualAble, $pageNavigator;
+    public $visualAble;
+
+    /**
+     * @var Dynamics_Page
+     */
+    public $pageNavigator;
 
     /**
      * 构造器
@@ -78,8 +83,8 @@ class Dynamics_Abstract extends Typecho_Widget
             $this->{$key} = $value;
         }
         $this->url = $this->option->applyUrl($this->did);
-        $this->visualAble = $this->hasLogin || $this->status != 'private';
-        $this->content = $this->visualAble ? Markdown::convert(trim($this->text)) : '';
+        $this->visualAble = $this->status != 'private' ?: ($this->hasLogin ? $this->user->uid == $this->authorId : false);
+        $this->content = $this->visualAble ? Markdown::convert($this->text) : '';
     }
 
     /**
