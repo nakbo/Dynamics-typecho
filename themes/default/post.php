@@ -6,21 +6,38 @@
 if (!defined('__TYPECHO_ROOT_DIR__')) exit;
 ?>
 
-<?php $this->need("header.php") ?>
+<?php $this->import("header.php") ?>
 
-    <li id="<?php $this->dynamic->did() ?>>" class="dynamics_list">
-        <div class="dynamic-author" itemprop="creator" itemscope="" itemtype="http://schema.org/Person">
-                <span itemprop="image"><img class="avatar" src="<?php $this->dynamic->avatar() ?>"
-                                            alt="<?php $this->dynamic->authorName() ?>" width="32" height="32"></span>
-            <cite class="fn" itemprop="name"><?php $this->dynamic->authorName() ?></cite>
-        </div>
-        <div class="dynamic-meta">
-            <a href="<?php $this->dynamic->url() ?>">
-                <time itemprop="dynamicTime" datetime="{date}"><?php $this->dynamic->created() ?></time>
-            </a>
-            <span><?php $this->dynamic->deviceTag() ?></span>
-        </div>
-        <div class="dynamic-content" itemprop="commentText"><?php $this->dynamic->content() ?></div>
-    </li>
+<ul>
+    <li>=================================================</li>
+    <li>did: <?php $this->dynamics->did() ?></li>
+    <li>mail: <?php $this->dynamics->mail() ?></li>
+    <li>avatar: <?php $this->dynamics->avatar() ?></li>
+    <li>authorId: <?php $this->dynamics->authorId() ?></li>
+    <li>authorName: <?php $this->dynamics->authorName() ?></li>
+    <li>url: <?php $this->dynamics->url() ?></li>
+    <li>created: <?php $this->dynamics->created('n\月j\日,Y  H:i:s') ?></li>
+    <li>modified: <?php $this->dynamics->modified() ?></li>
+    <li>data: <?php $this->dynamics->date('n\月j\日,Y  H:i:s') ?></li>
+    <li>deviceTag: <?php $this->dynamics->deviceTag() ?></li>
+    <li>deviceInfo: <?php $this->dynamics->deviceInfo() ?></li>
+    <li>deviceOs: <?php $this->dynamics->deviceOs() ?></li>
+    <li>content: <?php $this->dynamics->content() ?></li>
+    <li>agent: <?php $this->dynamics->agent() ?></li>
+    <li>status: <?php $this->dynamics->status() ?></li>
+    <li>----------------------------------------------</li>
+    <li>did: <?php echo $this->dynamics->did ?></li>
+    <li>mail: <?php echo $this->dynamics->mail ?></li>
+    <li>authorId: <?php echo $this->dynamics->authorId ?></li>
+    <li>authorName: <?php echo $this->dynamics->authorName ?></li>
+    <li>url: <?php echo $this->dynamics->url ?></li>
+    <li>created: <?php echo $this->dynamics->created ?></li>
+    <li>modified: <?php echo $this->dynamics->modified ?></li>
+    <li>content: <?php echo $this->dynamics->content ?></li>
+    <li>agent: <?php echo $this->dynamics->agent ?></li>
+    <li>status: <?php echo $this->dynamics->status ?></li>
 
-<?php $this->need("footer.php") ?>
+    <li>====================================================</li>
+</ul>
+
+<?php $this->import("footer.php") ?>

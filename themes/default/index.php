@@ -1,74 +1,81 @@
 <?php
+if (!defined('__TYPECHO_ROOT_DIR__')) exit;
+
 /**
- * 这是我的动态一套默认皮肤
+ * 动态插件一套开发指南皮肤
  *
- * 本页面是动态的首页
- * 类似于博客的首页
  *
  * @package default
  * @author 权那他
- * @version 1.0
- * @link https://github.com/kraity/Dynamics
+ * @version 1.2
+ * @dependence Dynamics
+ * @link https://github.com/krait-team/Dynamics-typecho
  */
 
-if (!defined('__TYPECHO_ROOT_DIR__')) exit;
+//调用动态主题的文件
+$this->import("header.php");
 
-// $this->need("header.php"); 是调用博客主题的文件
-// $this->import("header.php"); 是调用动态主题的文件
+//调用博客主题的文件
+//$this->need("header.php")
 
-// $this->options->siteUrl();  这些方法依然可以调用
-// $this->options->themeUrl();
+// testFunction 已在文件 functions.php 里定义了, 可自行添加函数
+testFunction("这是一个测试");
 
-// 动态首页
-//$this->homeUrl();
-
-// 注意有括号()，是echo，没有括号的调用return
-//$this->dynamics->did(); //  动态的did
-//$this->dynamics->did 也可以这样调用
-//$this->dynamics->avatar(); // 作者的头像，支持参数 $this->dynamics->avatar(32);   $this->dynamics->avatar(32,'X','mm');
-//$this->dynamics->avatar 也可以这样调用
-//$this->dynamics->authorName(); //作者的用户名
-//$this->dynamics->authorName
-//$this->dynamics->authorId(); //作者id
-//$this->dynamics->authorId
-//$this->dynamics->created(); //动态创建时间 支持参数 $this->dynamics->created("n\月j\日,Y  H:i:s");
-//$this->dynamics->created
-//$this->dynamics->modified(); // 动态更新时间
-//$this->dynamics->modified
-//$this->dynamics->status(); // 动态状态，目前有publish和private
-//$this->dynamics->status
-//$this->dynamics->url(); // 动态的链接
-//$this->dynamics->url
-//$this->dynamics->content(); //动态内容，已markdown解析过后
-//$this->dynamics->content
-//$this->dynamics->text(); //动态内容，没有经过markdown解析
-//$this->dynamics->text
-
-// 注意上述的$this->dynamics->
-// 在index.php 中是 dynamics (有s)
-// 在post.php 中是 dynamic (无s，是单数)
-
+if ($this->is("index")) {
+    echo "主页";
+} else if ($this->is("post")) {
+    echo "动态页面";
+} else if ($this->is("404")) {
+    echo "404页面";
+} else {
+    echo "其他页面";
+}
 ?>
 
-<?php $this->need("header.php") ?>
+注意区别
+$this->options 是博客下的
+$this->option 是动态主题下的
+
+主题配置(functions.php -> themeConfig)
+头像图: <?php $this->option->logoUrl() ?>
 
 <?php while ($this->dynamics->next()) : ?>
-    <li id="<?php $this->dynamics->did() ?>>" class="dynamics_list">
-        <div class="dynamic-author" itemprop="creator" itemscope="" itemtype="http://schema.org/Person">
-                <span itemprop="image"><img class="avatar" src="<?php $this->dynamics->avatar() ?>"
-                                            alt="<?php $this->dynamics->authorName() ?>" width="32" height="32"></span>
-            <cite class="fn" itemprop="name"><?php $this->dynamics->authorName() ?></cite>
-        </div>
-        <div class="dynamic-meta">
-            <a href="<?php $this->dynamics->url() ?>">
-                <time itemprop="dynamicTime"><?php $this->dynamics->created() ?></time>
-            </a>
-            <span><?php $this->dynamics->deviceTag() ?></span>
-        </div>
-        <div class="dynamic-content" itemprop="commentText"><?php $this->dynamics->content() ?></div>
-    </li>
+    <ul>
+        <li>=================================================</li>
+        <li>did: <?php $this->dynamics->did() ?></li>
+        <li>mail: <?php $this->dynamics->mail() ?></li>
+        <li>avatar: <?php $this->dynamics->avatar() ?></li>
+        <li>authorId: <?php $this->dynamics->authorId() ?></li>
+        <li>authorName: <?php $this->dynamics->authorName() ?></li>
+        <li>url: <?php $this->dynamics->url() ?></li>
+        <li>created: <?php $this->dynamics->created('n\月j\日,Y  H:i:s') ?></li>
+        <li>modified: <?php $this->dynamics->modified() ?></li>
+        <li>data: <?php $this->dynamics->date('n\月j\日,Y  H:i:s') ?></li>
+        <li>deviceTag: <?php $this->dynamics->deviceTag() ?></li>
+        <li>deviceInfo: <?php $this->dynamics->deviceInfo() ?></li>
+        <li>deviceOs: <?php $this->dynamics->deviceOs() ?></li>
+        <li>content: <?php $this->dynamics->content() ?></li>
+        <li>agent: <?php $this->dynamics->agent() ?></li>
+        <li>status: <?php $this->dynamics->status() ?></li>
+        <li>----------------------------------------------</li>
+        <li>did: <?php echo $this->dynamics->did ?></li>
+        <li>mail: <?php echo $this->dynamics->mail ?></li>
+        <li>authorId: <?php echo $this->dynamics->authorId ?></li>
+        <li>authorName: <?php echo $this->dynamics->authorName ?></li>
+        <li>url: <?php echo $this->dynamics->url ?></li>
+        <li>created: <?php echo $this->dynamics->created ?></li>
+        <li>modified: <?php echo $this->dynamics->modified ?></li>
+        <li>content: <?php echo $this->dynamics->content ?></li>
+        <li>agent: <?php echo $this->dynamics->agent ?></li>
+        <li>status: <?php echo $this->dynamics->status ?></li>
+
+        <li>====================================================</li>
+    </ul>
 <?php endwhile; ?>
 
-<?php $this->dynamics->navigator() ?>
+<?php
 
-<?php $this->need("footer.php") ?>
+// 分页
+$this->dynamics->navigator() ?>
+
+<?php $this->import("footer.php") ?>

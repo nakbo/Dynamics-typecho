@@ -1,323 +1,180 @@
 <?php
-/** @noinspection PhpInconsistentReturnPointsInspection */
-/** @noinspection PhpUnhandledExceptionInspection */
-/** @noinspection PhpIncludeInspection */
-/** @noinspection DuplicatedCode */
-include_once 'Dynamics_Abstract.php';
 
-class Dynamics_Action extends Typecho_Widget implements Widget_Interface_Do
+class Dynamics_Action extends Dynamics_Abstract implements Widget_Interface_Do
 {
-    public $db;
-    public $options;
-    public $user;
-    public $config;
-    public $dynamic;
-    public $dynamics;
-    public $thisIs;
-    public $slug;
-
-    private $_params;
-    private $_themeDir;
 
     /**
-     * Dynamics_Action constructor.
-     * @param $request
-     * @param $response
-     * @param null $params
+     * 插入
+     *
+     * @param $uid
+     * @param $dynamic
+     * @return mixed
      * @throws Typecho_Db_Exception
-     * @throws Typecho_Exception
      */
-    public function __construct($request, $response, $params = null)
+    public static function dynamicsAdd($uid, $dynamic)
     {
-        parent::__construct($request, $response, $params);
-        $this->db = Typecho_Db::get();
-        $this->options = Typecho_Widget::widget('Widget_Options');
-        $this->config = $this->options->Plugin('Dynamics');
-        $this->user = Typecho_Widget::widget('Widget_User');
-
-        $this->_params = array(
-            "pageSize" => $this->config->pageSize,
-            "isPjax" => $this->config->isPjax == 1
-        );
-        $this->_themeDir = rtrim($this->options->themeFile($this->options->theme), '/') . '/';
-
-    }
-
-    /**
-     * 动态首页
-     * @param string $path
-     * @param bool $isReturn
-     * @return string
-     */
-    public function homeUrl($path = "", $isReturn = false)
-    {
-        call_user_func("Dynamics_Plugin::homeUrl", $path, $isReturn);
-    }
-
-    /**
-     * 动态主题路径
-     * @param string $path
-     * @param bool $isReturn
-     * @return string
-     */
-    public function themeUrl($path = "", $isReturn = false)
-    {
-        call_user_func("Dynamics_Plugin::themeUrl", $path, $isReturn);
-    }
-
-    /**
-     * @Deprecated 已弃用, 暂时保留
-     * @param string $path
-     * @param bool $isReturn
-     * @Deprecated
-     */
-    public function themeDirUrl($path = "", $isReturn = false)
-    {
-        call_user_func("Dynamics_Plugin::themeUrl", $path, $isReturn);
-    }
-
-    /**
-     * 动态主题名字
-     * @return string
-     */
-    public function themeName()
-    {
-        call_user_func("Dynamics_Plugin::themeName");
-    }
-
-    /**
-     * 动态主题绝对路径
-     * @param string $path
-     * @return string
-     */
-    public static function themeFile($path = "")
-    {
-        call_user_func("Dynamics_Plugin::themeFile", $path);
-    }
-
-    /**
-     * 动态首页
-     */
-    public function dispatchIndex()
-    {
-        $this->thisIs = "index";
-        $this->import("functions.php");
-        $this->dynamics = Dynamics_Plugin::get($this->_params);
-
-        /* 引入布局 */
-        $this->import('index.php');
-    }
-
-    /**
-     * 路由分发
-     */
-    public function dispatch()
-    {
-        $this->thisIs = "post";
-        $this->slug = $this->request->slug;
-        $this->import("functions.php");
-
-        $did = Dynamics_Plugin::parseUrl($this->slug);
-        if (empty($did)) {
-            $this->error404();
-        }
-
-        $select = $this->db->select(
-            'table.dynamics.*',
-            'table.users.screenName',
-            'table.users.mail')
-            ->from('table.dynamics')
-            ->join('table.users', 'table.dynamics.authorId = table.users.uid', Typecho_Db::LEFT_JOIN)
-            ->where("table.dynamics.did = ?", $did);
-
-        $dic = $this->db->fetchRow($select);
-        if (count($dic) == 0) {
-            $this->error404();
-        }
-
-        $this->dynamic = new Dynamics_Abstract(
-            Typecho_Request::getInstance(),
-            Typecho_Response::getInstance()
-        );
-        $this->dynamic->setDid($dic['did']);
-        $this->dynamic->setStatus($dic['status']);
-        $this->dynamic->setAuthorId($dic['authorId']);
-        $this->dynamic->setMail($dic['mail']);
-        $this->dynamic->setAuthorName($dic['screenName']);
-        $this->dynamic->setText($dic['text']);
-        $this->dynamic->setCreated($dic['created']);
-        $this->dynamic->setModified($dic['modified']);
-        $this->dynamic->setAvatar($dic['avatar']);
-        $this->dynamic->setAgent($dic['agent']);
-
-        /* 引入布局 */
-        $this->import('post.php');
-    }
-
-    /**
-     * 当前位置，类似博客主题的 $this->is();
-     * 首页 index
-     * 动态 post
-     * 404  404
-     * @param $type
-     * @return bool
-     */
-    public function thisIs($type)
-    {
-        return $this->thisIs == $type;
-    }
-
-    /**
-     * 引入博客主题的文件
-     * @param $fileName
-     */
-    public function need($fileName)
-    {
-        $path = $this->_themeDir . $fileName;
-        if (file_exists($path)) {
-            require_once $path;
-        }
-    }
-
-    /**
-     * 引入动态主题的文件
-     * @param $fileName
-     */
-    public function import($fileName)
-    {
-        $path = Dynamics_Plugin::themeFile($fileName);
-        if (file_exists($path)) {
-            require_once $path;
-        }
-    }
-
-    /**
-     * 展示分页
-     */
-    public function showPage()
-    {
-        $this->thisIs = "page";
-        $this->import("functions.php");
-        $this->dynamics = Dynamics_Plugin::get($this->_params);
-        //$this->import('page.php');
-        $path = dirname(__FILE__).'/page.php';
-        if (file_exists($path)){
-            require_once $path;
-        }
-        //$options = $this->config;
-    }
-
-    /**
-     * 404
-     */
-    public function error404()
-    {
-        $this->response->setStatus(404);
-        $this->thisIs = "404";
-        $this->import("functions.php");
-        $this->import('404.php');
-        exit;
-    }
-
-    private function error($message = '', $data = array())
-    {
-        $this->response->throwJson(array(
-            'result' => false,
-            'message' => $message,
-            'data' => $data
-        ));
-    }
-
-    private function success($data = array(), $message = '')
-    {
-        $this->response->throwJson(array(
-            'result' => true,
-            'message' => $message,
-            'data' => $data
-        ));
-    }
-
-    private function filterParam($dynamic)
-    {
-        $statusName = "";
-        if ($dynamic["status"] == "private") {
-            $statusName = "[私密] ";
-        } else if ($dynamic["status"] == "hidden") {
-            $statusName = "[隐藏] ";
-        }
-
-        $dynamic["title"] = $statusName . date("m月d日, Y年", $dynamic["created"]);
-        $dynamic["url"] = Dynamics_Plugin::applyUrl($dynamic["did"], true);
-        $dynamic["desc"] = mb_substr(strip_tags($dynamic["text"]), 0, 20, 'utf-8');
+        $db = Typecho_Db::get();
+        $dynamic['authorId'] = $uid;
+        $dynamic['agent'] = $_SERVER['HTTP_USER_AGENT'];
+        $dynamic['did'] = $db->query($db
+            ->insert('table.dynamics')
+            ->rows($dynamic));
         return $dynamic;
     }
 
-    private function filterParams($data)
+    /**
+     * 编辑
+     *
+     * @param $uid
+     * @param $dynamic
+     * @return mixed
+     * @throws Typecho_Db_Exception
+     */
+    public static function dynamicsAlter($uid, $dynamic)
     {
-        $dynamics = array();
-        foreach ($data as $dynamic) {
-            $dynamics[] = $this->filterParam($dynamic);
-        }
-        return $dynamics;
+        $db = Typecho_Db::get();
+        $dynamic['authorId'] = $uid;
+//        $dynamic['agent'] = $_SERVER['HTTP_USER_AGENT'];
+        $db->query($db
+            ->update('table.dynamics')
+            ->rows($dynamic)
+            ->where('did = ?', $dynamic['did']));
+        return $dynamic;
     }
 
-    public function adds()
+    /**
+     * 删除
+     *
+     * @param $uid
+     * @param $list
+     * @return int
+     * @throws Typecho_Db_Exception
+     */
+    public static function dynamicsRemove($uid, $list)
     {
-        if (!$this->isAdmin()) {
+        $db = Typecho_Db::get();
+        $deleteCount = 0;
+        foreach ($list as $did) {
+            if ($db->query($db->delete('table.dynamics')
+                ->where('authorId', $uid)
+                ->where('did = ?', $did))) {
+                $deleteCount++;
+            }
+        }
+        return $deleteCount;
+    }
+
+    /**
+     * 列表
+     *
+     * @param $uid
+     * @param null $status
+     * @param int $pageSize
+     * @param int $currentPage
+     * @return array
+     * @throws Typecho_Db_Exception
+     * @throws Typecho_Exception
+     */
+    public static function dynamicsGain($uid, $status = null, $pageSize = 10, $currentPage = 1)
+    {
+        $db = Typecho_Db::get();
+        $select = $db->select()->from('table.dynamics')
+            ->where('authorId = ?', $uid);
+
+        if (isset($status) && $status != "all") {
+            $select->where('status = ?', $status);
+        }
+
+        $select->order('created', Typecho_Db::SORT_DESC)
+            ->page($currentPage, $pageSize);
+
+        $dynamicRough = $db->fetchAll($select);
+        $list = [];
+
+        $option = Typecho_Widget::widget('Dynamics_Option');
+
+        foreach ($dynamicRough as $dynamic) {
+            $dynamic["title"] = date("m月d日, Y年", $dynamic["created"]);
+            $dynamic["permalink"] = $option->applyUrl($dynamic["did"]);
+            $list[] = $dynamic;
+        }
+        return $list;
+    }
+
+    /**
+     * 新增
+     * @throws Typecho_Db_Exception|Typecho_Exception
+     */
+    public function addDynamics()
+    {
+        if (!$this->hasLogin) {
             $this->error('请登录后台后重试');
         }
-        $date = (new Typecho_Date($this->options->gmtTime))->time();
+        $date = time();
         $dynamic['text'] = "滴滴打卡";
-        $dynamic['authorId'] = Typecho_Cookie::get('__typecho_uid');
         $dynamic['modified'] = $date;
         $dynamic['created'] = $date;
-        $dynamic['agent'] = $_SERVER['HTTP_USER_AGENT'];
+
         /** 插入数据 */
-        $dynamicId = $this->db->query($this->db->insert('table.dynamics')->rows($dynamic));
-        $data = $this->db->fetchRow($this->db->select('table.dynamics.*, table.users.screenName author_name')
-            ->from('table.dynamics')
-            ->join('table.users', 'table.dynamics.authorId = table.users.uid')
-            ->where('table.dynamics.did =  ?', $dynamicId)
-        );
-        $this->success($this->filterParam($data));
+        $result = Dynamics_Action::dynamicsAdd($this->user->uid, $dynamic);
+        $this->success($this->filterParam($result));
     }
 
-    public function saves()
+    /**
+     * 保存
+     *
+     * @throws Typecho_Db_Exception|Typecho_Exception
+     */
+    public function saveDynamics()
     {
-        if (!$this->isAdmin()) {
+        if (!$this->hasLogin) {
             $this->error('请登录后台后重试');
         }
-        $dynamicId = $this->request->get('did', 0);
-        $data = array(
-            'text' => $this->request->get('text', ''),
-        );
-        $this->db->query($this->db->update('table.dynamics')->rows($data)->where('did = ?', $dynamicId));
-        $data = $this->db->fetchRow($this->db->select('table.dynamics.*, table.users.screenName author_name')
-            ->from('table.dynamics')
-            ->join('table.users', 'table.dynamics.authorId = table.users.uid')
-            ->where('table.dynamics.did =  ?', $dynamicId)
-        );
-        $this->success($this->filterParam($data));
+        $dynamic = [
+            'did' => $this->request->get('did', 0),
+            'text' => $this->request->get('text', '')
+        ];
+
+        /** 保存数据 */
+        $result = Dynamics_Action::dynamicsAlter($this->user->uid, $dynamic);
+        $this->success($this->filterParam($result));
     }
 
-    public function lists()
+    /**
+     * 列表
+     * @throws Typecho_Exception
+     */
+    public function listDynamics()
     {
-        if (!$this->isAdmin()) {
+        if (!$this->hasLogin) {
             $this->error('请登录后台后重试');
         }
         $lastid = $this->request->get('lastdid', 0);
         $size = 10;
-        $select = $this->db->select('table.dynamics.*, table.users.screenName author_name')->from('table.dynamics')->join('table.users', 'table.dynamics.authorId = table.users.uid');
+        $select = $this->db->select('table.dynamics.*, table.users.screenName author_name')
+            ->from('table.dynamics')
+            ->join('table.users', 'table.dynamics.authorId = table.users.uid')
+            ->where('uid = ?', $this->user->uid);
         if ($lastid) {
             $select->where('table.dynamics.did < ? ', $lastid);
         }
         $select->order('table.dynamics.did', Typecho_Db::SORT_DESC)->limit($size);
-        $this->success($this->filterParams($this->db->fetchAll($select)));
+        $data = $this->db->fetchAll($select);
+
+        $dynamics = [];
+        foreach ($data as $dynamic) {
+            $dynamics[] = $this->filterParam($dynamic);
+        }
+
+        $this->success($dynamics);
     }
 
-    public function deletes()
+    /**
+     * 删除
+     */
+    public function deleteDynamics()
     {
-        if (!$this->isAdmin()) {
+        if (!$this->hasLogin) {
             $this->error('请登录后台后重试');
         }
         $id = $this->request->get('did', 0);
@@ -329,22 +186,187 @@ class Dynamics_Action extends Typecho_Widget implements Widget_Interface_Do
     }
 
     /**
-     * 判断是否是管理员登录状态
-     *
-     * @access public
-     * @return bool
+     * @param $theme
+     * @throws Typecho_Exception
+     * @throws Typecho_Plugin_Exception
      */
-    public function isAdmin()
+    public function changeTheme($theme)
     {
-        return $this->user->pass('administrator', true);
+        $options = $this->options->plugin("Dynamics");
+        $settings = [];
+        foreach ($options as $key => $val) {
+            $settings[$key] = $val;
+        }
+        $settings['theme'] = $theme;
+        $settings['themeConfig'] = Dynamics_Plugin::changeTheme($theme);
+        Helper::configPlugin('Dynamics', $settings);
+
+        $this->widget('Widget_Notice')->set(_t("动态主题已经改变"), NULL, 'success');
+        $this->response->goBack();
     }
 
+    /**
+     * 编辑外观文件
+     *
+     * @access public
+     * @param string $theme 外观名称
+     * @param string $file 文件名
+     * @return void
+     * @throws Typecho_Exception
+     * @throws Typecho_Widget_Exception
+     */
+    public function editorTheme($theme, $file)
+    {
+        $option = Typecho_Widget::widget('Dynamics_Option');
+        $path = $option->themesFile($theme, $file);
+
+        if (file_exists($path) && is_writeable($path) && !Typecho_Common::isAppEngine()
+            && (!defined('__TYPECHO_THEME_WRITEABLE__') || __TYPECHO_THEME_WRITEABLE__)) {
+            $handle = fopen($path, 'wb');
+            if ($handle && fwrite($handle, $this->request->content)) {
+                fclose($handle);
+                $this->widget('Widget_Notice')->set(_t("文件 %s 的更改已经保存", $file), 'success');
+            } else {
+                $this->widget('Widget_Notice')->set(_t("文件 %s 无法被写入", $file), 'error');
+            }
+            $this->response->goBack();
+        } else {
+            throw new Typecho_Widget_Exception(_t('您编辑的文件不存在'));
+        }
+    }
+
+    /**
+     * 配置外观
+     *
+     * @access public
+     * @return void
+     * @throws Typecho_Exception
+     */
+    public function configTheme()
+    {
+        $option = Typecho_Widget::widget('Dynamics_Option');
+        $configFile = $option->themesFile($option->theme, 'functions.php');
+
+        $isExists = false;
+        if (file_exists($configFile)) {
+            require_once $configFile;
+            if (function_exists('themeConfig')) {
+                $isExists = true;
+            }
+        }
+
+        if (!$isExists) {
+            throw new Typecho_Widget_Exception(_t('外观配置功能不存在'), 404);
+        }
+
+        // 已经载入了外观函数
+        $form = new Typecho_Widget_Helper_Form(NULL, Typecho_Widget_Helper_Form::POST_METHOD);
+        themeConfig($form);
+
+        /** 验证表单 */
+        if ($form->validate()) {
+            $this->response->goBack();
+        }
+
+        $config = $form->getAllRequest();
+
+        $options = $this->options->plugin("Dynamics");
+        $settings = [];
+        foreach ($options as $key => $val) {
+            $settings[$key] = $val;
+        }
+        $settings['theme'] = $option->theme;
+        $settings['themeConfig'] = serialize($config);
+        Helper::configPlugin('Dynamics', $settings);
+
+        /** 提示信息 */
+        $this->widget('Widget_Notice')->set(_t("动态主题设置已经保存"), 'success');
+        /** 转向原页 */
+        $this->response->goBack();
+    }
+
+    /**
+     * @param string $message
+     * @param array $data
+     */
+    private function error($message = '', $data = [])
+    {
+        $this->response->throwJson([
+            'result' => false,
+            'message' => $message,
+            'data' => $data
+        ]);
+    }
+
+    /**
+     * 前端返回成功
+     *
+     * @param array $data
+     * @param string $message
+     */
+    private function success($data = [], $message = '')
+    {
+        $this->response->throwJson([
+            'result' => true,
+            'message' => $message,
+            'data' => $data
+        ]);
+    }
+
+    /**
+     * @param $dynamic
+     * @return mixed
+     * @throws Typecho_Exception
+     */
+    private function filterParam($dynamic)
+    {
+        $statusName = "";
+        if ($dynamic["status"] == "private") {
+            $statusName = "[私密] ";
+        } else if ($dynamic["status"] == "hidden") {
+            $statusName = "[隐藏] ";
+        }
+
+        $option = Typecho_Widget::widget('Dynamics_Option');
+
+        $dynamic["title"] = $statusName . date("m月d日, Y年", $dynamic["created"]);
+        $dynamic["url"] = $option->applyUrl($dynamic["did"]);
+        $dynamic["desc"] = mb_substr(strip_tags($dynamic["text"]), 0, 20, 'utf-8');
+        return $dynamic;
+    }
+
+    /**
+     * Dynamics_Action::getDynamics()
+     * 弃用
+     */
+    public static function getDynamics()
+    {
+        return null;
+    }
+
+    /**
+     * Dynamics_Action::getDynamic()
+     * 弃用
+     *
+     */
+    public static function getDynamic()
+    {
+        return null;
+    }
+
+    /**
+     * 行动
+     */
     public function action()
     {
-        $this->on($this->request->is('do=adds'))->adds();
-        $this->on($this->request->is('do=saves'))->saves();
-        $this->on($this->request->is('do=lists'))->lists();
-        $this->on($this->request->is('do=deletes'))->deletes();
-        $this->response->redirect(Typecho_Common::url('extending.php?panel=Dynamics%2Fmanage-dynamics.php', $this->options->adminUrl));
+        $this->on($this->request->is('do=addDynamics'))->addDynamics();
+        $this->on($this->request->is('do=saveDynamics'))->saveDynamics();
+        $this->on($this->request->is('do=listDynamics'))->listDynamics();
+        $this->on($this->request->is('do=deleteDynamics'))->deleteDynamics();
+
+        $this->on($this->request->is('do=changeTheme'))->changeTheme($this->request->filter('slug')->change);
+        $this->on($this->request->is('do=editorTheme'))
+            ->editorTheme($this->request->filter('slug')->theme, $this->request->edit);
+        $this->on($this->request->is('do=configTheme'))->configTheme();
     }
 }

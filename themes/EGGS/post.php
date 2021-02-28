@@ -1,12 +1,5 @@
-<?php
-/**
- * 本页面是动态的单个页面【本模板暂时未使用，可以按照自己需求修改】
- * 类似于博客的文章页面，这个显示单个指定的动态，根据单个动态的链接访问才显示
- */
-if (!defined('__TYPECHO_ROOT_DIR__')) exit;
-$dynamic = Dynamics_Action::getDynamic();
-$pageType = 'single';
-include('header.php');
+<?php if (!defined('__TYPECHO_ROOT_DIR__')) exit;
+$this->import('header.php');
 ?>
 
 
@@ -19,5 +12,7 @@ include('header.php');
         <span class="time"><a href="<?php $this->dynamic->url() ?>"><?php $this->dynamic->created() ?></a></span>
     </div>
 </div>
+
+<?php $this->import("footer.php") ?>
 
 

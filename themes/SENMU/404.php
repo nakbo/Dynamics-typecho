@@ -1,7 +1,5 @@
-<?php
-if (!defined('__TYPECHO_ROOT_DIR__')) exit;
-$pageType = '404';
-include('header.php');
+<?php if (!defined('__TYPECHO_ROOT_DIR__')) exit;
+$this->import('header.php');
 ?>
 <h1 class="miui-style">我的动态</h1>
 <div class="nabo-dynamics">
@@ -11,4 +9,4 @@ include('header.php');
     </div>
 </div>
 
-<?php include('footer.php'); ?>
+<?php $this->import('footer.php'); ?>
