@@ -261,7 +261,7 @@ class Dynamics_Themes_Config extends Widget_Abstract_Options
         $configs = unserialize($themeConfig);
         if (!empty($inputs)) {
             foreach ($inputs as $key => $val) {
-                $form->getInput($key)->value($configs{$key});
+                $form->getInput($key)->value($configs[$key]);
             }
         }
 
