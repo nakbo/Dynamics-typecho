@@ -78,7 +78,6 @@ class Dynamics_Plugin implements Typecho_Plugin_Interface
         Helper::addAction('dynamics', 'Dynamics_Action');
         Helper::addRoute('dynamics-index', Dynamics_Plugin::DYNAMICS_ROUTE, 'Dynamics_Archive', 'index');
         Helper::addRoute('dynamics-route', Dynamics_Plugin::DYNAMICS_ROUTE . "[slug].html", 'Dynamics_Archive', 'dispatch');
-        Helper::addRoute('dynamics-route', Dynamics_Plugin::DYNAMICS_ROUTE . "[slug].html", 'Dynamics_Archive', 'dispatch');
 
         return _t('动态插件已经激活');
     }
