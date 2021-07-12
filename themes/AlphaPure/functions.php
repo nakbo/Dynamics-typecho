@@ -4,7 +4,7 @@
  * 主题配置
  * @param $form
  */
-function themeConfig($form)
+function _themeConfig($form)
 {
     $radio = new Typecho_Widget_Helper_Form_Element_Text(
         'timeFormat', null, 'n\月j\日,Y  H:i:s',

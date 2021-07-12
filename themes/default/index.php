@@ -6,7 +6,7 @@ if (!defined('__TYPECHO_ROOT_DIR__')) exit;
  *
  *
  * @package default
- * @author 权那他
+ * @author 陆之岇
  * @version 1.2
  * @dependence Dynamics
  * @link https://github.com/krait-team/Dynamics-typecho

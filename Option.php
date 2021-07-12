@@ -28,8 +28,10 @@ class Dynamics_Option extends Typecho_Widget
         parent::__construct($request, $response, $params);
         $this->options = $this->widget('Widget_Options');
 
-        $config = unserialize($this->options->{"plugin:Dynamics"});
-        $config = array_merge($config, unserialize($config['themeConfig']));
+        $config = unserialize($this->options->{'plugin:Dynamics'});
+        if (is_array($themeConfig = unserialize($config['themeConfig']))) {
+            $config = array_merge($config, $themeConfig);
+        }
         unset($config['themeConfig']);
         foreach ($config as $name => $value) {
             $this->{$name} = $value;

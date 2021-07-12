@@ -3,8 +3,8 @@
 /**
  * 我的动态 - 南博助手
  * @package Dynamics
- * @author 权那他,尚寂新
- * @version 2.0
+ * @author 陆之岇,尚寂新
+ * @version 2.0.1
  * @link https://github.com/krait-team/Dynamics-typecho
  */
 class Dynamics_Plugin implements Typecho_Plugin_Interface
@@ -21,7 +21,7 @@ class Dynamics_Plugin implements Typecho_Plugin_Interface
     public static function activate()
     {
         $packageName = basename(dirname(__FILE__));
-        if ($packageName != "Dynamics") {
+        if ($packageName != 'Dynamics') {
             throw new Typecho_Plugin_Exception(_t('插件目录名必须为 Dynamics'));
         }
 
@@ -68,15 +68,10 @@ class Dynamics_Plugin implements Typecho_Plugin_Interface
             throw new Typecho_Plugin_Exception(_t('你的适配器为%s，目前只支持Mysql和SQLite', $adapterName));
         }
 
-        Typecho_Plugin::factory('Widget_XmlRpc')->dynamicsAdd = ['Dynamics_Action', 'dynamicsAdd'];
-        Typecho_Plugin::factory('Widget_XmlRpc')->dynamicsAlter = ['Dynamics_Action', 'dynamicsAlter'];
-        Typecho_Plugin::factory('Widget_XmlRpc')->dynamicsRemove = ['Dynamics_Action', 'dynamicsRemove'];
-        Typecho_Plugin::factory('Widget_XmlRpc')->dynamicsGain = ['Dynamics_Action', 'dynamicsGain'];
-
-        Typecho_Plugin::factory('Nabo_XmlRpc')->dynamicsAdd = ['Dynamics_Action', 'dynamicsAdd'];
-        Typecho_Plugin::factory('Nabo_XmlRpc')->dynamicsAlter = ['Dynamics_Action', 'dynamicsAlter'];
-        Typecho_Plugin::factory('Nabo_XmlRpc')->dynamicsRemove = ['Dynamics_Action', 'dynamicsRemove'];
-        Typecho_Plugin::factory('Nabo_XmlRpc')->dynamicsGain = ['Dynamics_Action', 'dynamicsGain'];
+        Typecho_Plugin::factory('Nabo_Dynamics')->insert = ['Dynamics_Action', 'insertOf'];
+        Typecho_Plugin::factory('Nabo_Dynamics')->modify = ['Dynamics_Action', 'modifyOf'];
+        Typecho_Plugin::factory('Nabo_Dynamics')->delete = ['Dynamics_Action', 'deleteOf'];
+        Typecho_Plugin::factory('Nabo_Dynamics')->select = ['Dynamics_Action', 'selectOf'];
 
         Helper::addPanel(3, 'Dynamics/Manage.php', '我的动态', '动态列表', 'administrator');
         Helper::addPanel(1, 'Dynamics/Themes.php', '动态外观', '动态主题列表', 'administrator');

@@ -499,7 +499,7 @@ include 'footer.php';
         });
 
         $(document).on('click', '#dynamic-btn-box .adds', function () {
-            $.get('<?php Helper::options()->index("action/dynamics?do=addDynamics");?>', {}, function (data) {
+            $.get('<?php Helper::options()->index("action/dynamics?do=add");?>', {}, function (data) {
                 if (data.result) {
                     notedata['key_' + data.data.did] = data.data;
 
@@ -529,7 +529,7 @@ include 'footer.php';
 
         $(document).on('click', '#dynamic-btn-box .save', function () {
             if (selectId) {
-                $.get('<?php Helper::options()->index("action/dynamics?do=saveDynamics");?>', {
+                $.get('<?php Helper::options()->index("action/dynamics?do=save");?>', {
                     did: selectId,
                     title: $('.dynamic-right .title').val(),
                     text: $('#text').val(),
@@ -548,7 +548,7 @@ include 'footer.php';
         $(document).on('click', '#dynamic-btn-box .delete', function () {
             if (confirm('确定删除该动态')) {
                 if (selectId) {
-                    $.get('<?php Helper::options()->index("action/dynamics?do=deleteDynamics");?>', {
+                    $.get('<?php Helper::options()->index("action/dynamics?do=remove");?>', {
                         did: selectId
                     }, function (data) {
                         if (data.result) {
@@ -570,13 +570,13 @@ include 'footer.php';
             }
         });
 
-        var lastdid = 0;
+        var lastDid = 0;
         var selectId = 0;
         var notedata = [];
 
         function loadDynamics() {
-            $.get('<?php Helper::options()->index("action/dynamics?do=listDynamics");?>', {
-                lastdid: lastdid
+            $.get('<?php Helper::options()->index("action/dynamics?do=list");?>', {
+                lastDid: lastDid
             }, function (data) {
                 if (data.result) {
                     var len = data.data.length;
@@ -585,7 +585,7 @@ include 'footer.php';
                         $('.dynamic-left .dynamic-loadmore').hide();
                         $('.dynamic-left .dynamic-nomore').show();
                     } else {
-                        lastdid = data.data[len - 1].did;
+                        lastDid = data.data[len - 1].did;
                         var note_item_tpl = '';
                         for (var i = 0; i < len; i++) {
                             notedata['key_' + data.data[i].did] = data.data[i];

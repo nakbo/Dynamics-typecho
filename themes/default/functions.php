@@ -4,14 +4,14 @@
  * 主题配置
  * @param $form
  */
-function themeConfig($form)
+function _themeConfig($form)
 {
     // 头像图
     $logoUrl = new Typecho_Widget_Helper_Form_Element_Text('logoUrl', NULL, "https://gravatar.loli.net/avatar/4e4559eceb7fbd4bca7925710592b1b9?s=100&r=G&d=mm", _t('头像图'), _t('这里填写 URL 地址,最好能走cdn或者oss,毕竟带宽小'));
     $form->addInput($logoUrl);
 
     // 你的名字
-    $yourName = new Typecho_Widget_Helper_Form_Element_Text('yourName', NULL, "权那他", _t('你的名字'), _t('在左上角头向下面,太长会自动...省略'));
+    $yourName = new Typecho_Widget_Helper_Form_Element_Text('yourName', NULL, "陆之岇", _t('你的名字'), _t('在左上角头向下面,太长会自动...省略'));
     $form->addInput($yourName);
 
     // 座右铭好

@@ -11,7 +11,7 @@ class Dynamics_Action extends Dynamics_Abstract implements Widget_Interface_Do
      * @return mixed
      * @throws Typecho_Db_Exception
      */
-    public static function dynamicsAdd($uid, $dynamic)
+    public static function insertOf($uid, $dynamic)
     {
         $db = Typecho_Db::get();
         $dynamic['authorId'] = $uid;
@@ -30,7 +30,7 @@ class Dynamics_Action extends Dynamics_Abstract implements Widget_Interface_Do
      * @return mixed
      * @throws Typecho_Db_Exception
      */
-    public static function dynamicsAlter($uid, $dynamic)
+    public static function modifyOf($uid, $dynamic)
     {
         $db = Typecho_Db::get();
         $dynamic['authorId'] = $uid;
@@ -50,7 +50,7 @@ class Dynamics_Action extends Dynamics_Abstract implements Widget_Interface_Do
      * @return int
      * @throws Typecho_Db_Exception
      */
-    public static function dynamicsRemove($uid, $list)
+    public static function deleteOf($uid, $list)
     {
         $db = Typecho_Db::get();
         $deleteCount = 0;
@@ -75,13 +75,13 @@ class Dynamics_Action extends Dynamics_Abstract implements Widget_Interface_Do
      * @throws Typecho_Db_Exception
      * @throws Typecho_Exception
      */
-    public static function dynamicsGain($uid, $status = null, $pageSize = 10, $currentPage = 1)
+    public static function selectOf($uid, $status = null, $pageSize = 10, $currentPage = 1)
     {
         $db = Typecho_Db::get();
         $select = $db->select()->from('table.dynamics')
             ->where('authorId = ?', $uid);
 
-        if (isset($status) && $status != "all") {
+        if (isset($status) && $status != 'total') {
             $select->where('status = ?', $status);
         }
 
@@ -89,15 +89,16 @@ class Dynamics_Action extends Dynamics_Abstract implements Widget_Interface_Do
             ->page($currentPage, $pageSize);
 
         $dynamicRough = $db->fetchAll($select);
-        $list = [];
 
+        $list = [];
         $option = Typecho_Widget::widget('Dynamics_Option');
 
         foreach ($dynamicRough as $dynamic) {
-            $dynamic["title"] = date("m月d日, Y年", $dynamic["created"]);
-            $dynamic["permalink"] = $option->applyUrl($dynamic["did"]);
+            $dynamic['title'] = date("m月d日, Y年", $dynamic["created"]);
+            $dynamic['permalink'] = $option->applyUrl($dynamic["did"]);
             $list[] = $dynamic;
         }
+
         return $list;
     }
 
@@ -105,7 +106,7 @@ class Dynamics_Action extends Dynamics_Abstract implements Widget_Interface_Do
      * 新增
      * @throws Typecho_Db_Exception|Typecho_Exception
      */
-    public function addDynamics()
+    public function addOf()
     {
         if (!$this->hasLogin) {
             $this->error('请登录后台后重试');
@@ -116,7 +117,7 @@ class Dynamics_Action extends Dynamics_Abstract implements Widget_Interface_Do
         $dynamic['created'] = $date;
 
         /** 插入数据 */
-        $result = Dynamics_Action::dynamicsAdd($this->user->uid, $dynamic);
+        $result = Dynamics_Action::insertOf($this->user->uid, $dynamic);
         $this->success($this->filterParam($result));
     }
 
@@ -125,7 +126,7 @@ class Dynamics_Action extends Dynamics_Abstract implements Widget_Interface_Do
      *
      * @throws Typecho_Db_Exception|Typecho_Exception
      */
-    public function saveDynamics()
+    public function saveOf()
     {
         if (!$this->hasLogin) {
             $this->error('请登录后台后重试');
@@ -136,7 +137,7 @@ class Dynamics_Action extends Dynamics_Abstract implements Widget_Interface_Do
         ];
 
         /** 保存数据 */
-        $result = Dynamics_Action::dynamicsAlter($this->user->uid, $dynamic);
+        $result = Dynamics_Action::modifyOf($this->user->uid, $dynamic);
         $this->success($this->filterParam($result));
     }
 
@@ -144,19 +145,19 @@ class Dynamics_Action extends Dynamics_Abstract implements Widget_Interface_Do
      * 列表
      * @throws Typecho_Exception
      */
-    public function listDynamics()
+    public function listOf()
     {
         if (!$this->hasLogin) {
             $this->error('请登录后台后重试');
         }
-        $lastid = $this->request->get('lastdid', 0);
+        $lid = $this->request->get('lastDid', 0);
         $size = 10;
         $select = $this->db->select('table.dynamics.*, table.users.screenName author_name')
             ->from('table.dynamics')
             ->join('table.users', 'table.dynamics.authorId = table.users.uid')
             ->where('uid = ?', $this->user->uid);
-        if ($lastid) {
-            $select->where('table.dynamics.did < ? ', $lastid);
+        if ($lid) {
+            $select->where('table.dynamics.did < ? ', $lid);
         }
         $select->order('table.dynamics.did', Typecho_Db::SORT_DESC)->limit($size);
         $data = $this->db->fetchAll($select);
@@ -172,7 +173,7 @@ class Dynamics_Action extends Dynamics_Abstract implements Widget_Interface_Do
     /**
      * 删除
      */
-    public function deleteDynamics()
+    public function removeOf()
     {
         if (!$this->hasLogin) {
             $this->error('请登录后台后重试');
@@ -250,7 +251,7 @@ class Dynamics_Action extends Dynamics_Abstract implements Widget_Interface_Do
         $isExists = false;
         if (file_exists($configFile)) {
             require_once $configFile;
-            if (function_exists('themeConfig')) {
+            if (function_exists('_themeConfig')) {
                 $isExists = true;
             }
         }
@@ -261,7 +262,7 @@ class Dynamics_Action extends Dynamics_Abstract implements Widget_Interface_Do
 
         // 已经载入了外观函数
         $form = new Typecho_Widget_Helper_Form(NULL, Typecho_Widget_Helper_Form::POST_METHOD);
-        themeConfig($form);
+        _themeConfig($form);
 
         /** 验证表单 */
         if ($form->validate()) {
@@ -320,38 +321,19 @@ class Dynamics_Action extends Dynamics_Abstract implements Widget_Interface_Do
      */
     private function filterParam($dynamic)
     {
-        $statusName = "";
-        if ($dynamic["status"] == "private") {
-            $statusName = "[私密] ";
-        } else if ($dynamic["status"] == "hidden") {
-            $statusName = "[隐藏] ";
+        $statusName = '';
+        if ($dynamic["status"] == 'private') {
+            $statusName = '[私密] ';
+        } else if ($dynamic["status"] == 'hidden') {
+            $statusName = '[隐藏] ';
         }
 
         $option = Typecho_Widget::widget('Dynamics_Option');
 
-        $dynamic["title"] = $statusName . date("m月d日, Y年", $dynamic["created"]);
-        $dynamic["url"] = $option->applyUrl($dynamic["did"]);
-        $dynamic["desc"] = mb_substr(strip_tags($dynamic["text"]), 0, 20, 'utf-8');
+        $dynamic['title'] = $statusName . date("m月d日, Y年", $dynamic["created"]);
+        $dynamic['url'] = $option->applyUrl($dynamic["did"]);
+        $dynamic['desc'] = mb_substr(strip_tags($dynamic["text"]), 0, 20, 'utf-8');
         return $dynamic;
-    }
-
-    /**
-     * Dynamics_Action::getDynamics()
-     * 弃用
-     */
-    public static function getDynamics()
-    {
-        return null;
-    }
-
-    /**
-     * Dynamics_Action::getDynamic()
-     * 弃用
-     *
-     */
-    public static function getDynamic()
-    {
-        return null;
     }
 
     /**
@@ -359,10 +341,10 @@ class Dynamics_Action extends Dynamics_Abstract implements Widget_Interface_Do
      */
     public function action()
     {
-        $this->on($this->request->is('do=addDynamics'))->addDynamics();
-        $this->on($this->request->is('do=saveDynamics'))->saveDynamics();
-        $this->on($this->request->is('do=listDynamics'))->listDynamics();
-        $this->on($this->request->is('do=deleteDynamics'))->deleteDynamics();
+        $this->on($this->request->is('do=add'))->addOf();
+        $this->on($this->request->is('do=save'))->saveOf();
+        $this->on($this->request->is('do=list'))->listOf();
+        $this->on($this->request->is('do=remove'))->removeOf();
 
         $this->on($this->request->is('do=changeTheme'))->changeTheme($this->request->filter('slug')->change);
         $this->on($this->request->is('do=editorTheme'))
