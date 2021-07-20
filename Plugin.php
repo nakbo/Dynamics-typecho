@@ -4,7 +4,7 @@
  * 我的动态 - 南博助手
  * @package Dynamics
  * @author 陆之岇,尚寂新
- * @version 2.0.1
+ * @version 2.0.2
  * @link https://github.com/krait-team/Dynamics-typecho
  */
 class Dynamics_Plugin implements Typecho_Plugin_Interface
