@@ -236,7 +236,7 @@ class Dynamics_Themes_Config extends Widget_Abstract_Options
 
         if (file_exists($configFile)) {
             require_once $configFile;
-            if (function_exists('themeConfig')) {
+            if (function_exists('_themeConfig')) {
                 return true;
             }
         }
@@ -254,7 +254,7 @@ class Dynamics_Themes_Config extends Widget_Abstract_Options
     {
         $form = new Typecho_Widget_Helper_Form($this->security->getIndex('/action/dynamics?do=configTheme'),
             Typecho_Widget_Helper_Form::POST_METHOD);
-        themeConfig($form);
+        _themeConfig($form);
         $inputs = $form->getInputs();
 
         $themeConfig = $this->options->plugin("Dynamics")->themeConfig;
