@@ -15,7 +15,7 @@ if (!defined('__TYPECHO_ROOT_DIR__')) exit;
 <div class="nabo-dynamics">
     <?php while ($this->dynamics->next()) : ?>
         <div class="dynamic-content">
-            <?php echo dynamicReplacer($this->dynamics->content); ?>
+            <?php echo dynamicReplacer($this->dynamics); ?>
         </div>
         <div class="dynamic-meta">
             <span class="time"><a href="<?php $this->dynamics->url() ?>" no-pjax><?php $this->dynamics->date() ?>&nbsp;&nbsp;&raquo;&nbsp;详情</a></span>

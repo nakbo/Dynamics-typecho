@@ -31,14 +31,14 @@ class Dynamics_Plugin implements Typecho_Plugin_Interface
 
         if (strpos($adapterName, 'Mysql') !== false) {
             if ($db->fetchRow($db->query("SHOW TABLES LIKE '{$prefix}dynamics';"))) {
-                /* 表更新 */
-                $rows = $db->fetchRow($db->select()->from('table.dynamics'));
-                $alter = [
-                    "agent" => 'ALTER TABLE `' . $prefix . 'dynamics` ADD `agent` varchar(511) DEFAULT NULL;'
-                ];
-                foreach ($alter as $column => $query) {
-                    if (!array_key_exists($column, $rows)) {
-                        $db->query($query);
+                if ($rows = $db->fetchRow($db->select()->from('table.dynamics'))) {
+                    $alter = array(
+                        'agent' => 'ALTER TABLE `' . $prefix . 'dynamics` ADD `agent` varchar(511) DEFAULT NULL;'
+                    );
+                    foreach ($alter as $column => $query) {
+                        if (!array_key_exists($column, $rows)) {
+                            $db->query($query);
+                        }
                     }
                 }
             } else {
