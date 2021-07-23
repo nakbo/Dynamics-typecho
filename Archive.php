@@ -13,6 +13,11 @@ class Dynamics_Archive extends Typecho_Widget
     protected $db;
 
     /**
+     * @var Widget_User
+     */
+    public $user;
+
+    /**
      * @var Widget_Options
      */
     public $options;
@@ -21,15 +26,6 @@ class Dynamics_Archive extends Typecho_Widget
      * @var Dynamics_Option
      */
     public $option;
-
-    /**
-     * @var Widget_User
-     */
-    public $user;
-
-    public $slug, $type, $title, $description, $keywords, $page = 1;
-    private $_params;
-    public $error404 = false, $dynamicsNum;
 
     /**
      * @param $request
@@ -44,10 +40,28 @@ class Dynamics_Archive extends Typecho_Widget
         $this->options = $this->widget('Widget_Options');
         $this->option = $this->widget('Dynamics_Option');
         $this->user = $this->widget('Widget_User');
+
         $this->dynamics = $this->widget('Dynamics_Abstract');
-        // 兼容旧版本
+        $this->dynamics->archive = &$this;
+
+        $this->page = $this->request->get('paging', 1);
+        $this->pageSize = $this->option->pageSize;
+
+        // compatible with older versions
         $this->dynamic = &$this->dynamics;
-        $this->page = $this->request->get('dynamicsPage', 1);
+    }
+
+    /**
+     * 近期动态
+     *
+     */
+    private function select()
+    {
+        $this->db->fetchAll($this->dynamics->select()
+            ->where('table.dynamics.status != ?', 'hidden')
+            ->order('table.dynamics.created', Typecho_Db::SORT_DESC)
+            ->page($this->page, $this->pageSize), [$this->dynamics, 'push']);
+        $this->total = $this->dynamics->size($this->db->select('count(1) AS count'));
     }
 
     /**
@@ -56,38 +70,69 @@ class Dynamics_Archive extends Typecho_Widget
      */
     public function index()
     {
-        $this->type = "index";
-        $this->import("functions.php");
-        $this->parse($this->_params);
+        $this->type = 'index';
+        $this->import('functions.php');
 
-        /* 引入布局 */
+        $this->select();
+
         $this->import('index.php');
     }
 
     /**
-     * 路由分发
+     * 单个动态
      *
      */
-    public function dispatch()
+    public function post()
     {
-        $this->type = "post";
+        $this->type = 'post';
         $this->slug = $this->request->slug;
-        $this->import("functions.php");
+        $this->import('functions.php');
 
         $did = $this->option->parseUrl($this->slug);
         if (empty($did)) {
             $this->error404();
         }
-        $this->_params['did'] = $did;
-        $this->parse($this->_params);
+
+        $this->db->fetchAll($this->dynamics->select()
+            ->where("table.dynamics.did = ?", $did), [$this->dynamics, 'push']);
 
         if ($this->error404) {
             $this->error404();
         }
         $this->title = date("m月d日, Y年", $this->dynamics->created);
         $this->description = mb_substr(strip_tags($this->dynamics->content), 0, 200, 'utf8');
-        /* 引入布局 */
+
         $this->import('post.php');
+    }
+
+    /**
+     * 展示分页
+     * @param bool $import
+     */
+    public function page($import = false)
+    {
+        $this->type = 'page';
+        if ($import) {
+            $this->import('functions.php');
+        }
+
+        $this->select();
+
+        if ($import) {
+            $this->import('page.php');
+        }
+    }
+
+    /**
+     * 404
+     */
+    public function error404()
+    {
+        $this->response->setStatus(404);
+        $this->type = '404';
+        $this->import('functions.php');
+        $this->import('404.php');
+        exit;
     }
 
     /**
@@ -148,73 +193,41 @@ class Dynamics_Archive extends Typecho_Widget
     }
 
     /**
-     * 404
+     * @param string $prev
+     * @param string $next
+     * @param int $splitPage
+     * @param string $splitWord
+     * @param string $template
+     * @throws Typecho_Widget_Exception
      */
-    public function error404()
+    public function pageNav($prev = '&laquo;', $next = '&raquo;', $splitPage = 3, $splitWord = '...', $template = '')
     {
-        $this->response->setStatus(404);
-        $this->type = "404";
-        $this->import("functions.php");
-        $this->import('404.php');
-        exit;
-    }
+        if ($this->dynamics->have()) {
+            $default = array(
+                'wrapTag' => 'ol',
+                'wrapClass' => 'dynamics-page-navigator'
+            );
 
-    /**
-     * 构造器
-     *
-     * @param array $format
-     */
-    public function parse($format = [])
-    {
-        if (($did = (int)$format["did"]) > 0) {
-            $select = $this->db->select(
-                'table.dynamics.*',
-                'table.users.screenName',
-                'table.users.mail')
-                ->from('table.dynamics')
-                ->join('table.users', 'table.dynamics.authorId = table.users.uid', Typecho_Db::LEFT_JOIN)
-                ->where("table.dynamics.did = ?", $did);
-            if (count($dic = $this->db->fetchRow($select)) == 0) {
-                $this->error404 = true;
-                return;
+            if (is_string($template)) {
+                parse_str($template, $config);
+            } else {
+                $config = $template;
             }
-            $this->dynamics->pushing($dic);
-        } else {
-            $pageSize = ($pageSize = (int)$format["pageSize"]) > 0 ? $pageSize : 5;
-            $select = $this->db->select(
-                'table.dynamics.*',
-                'table.users.screenName',
-                'table.users.mail')
-                ->where("table.dynamics.status != ?", "hidden")
-                ->from('table.dynamics');
-            $select->join('table.users', 'table.dynamics.authorId = table.users.uid', Typecho_Db::LEFT_JOIN);
 
-            $select = $select->order('table.dynamics.created', Typecho_Db::SORT_DESC);
-            $select = $select->page($this->page, $pageSize);
+            $template = array_merge($default, $config);
 
-            $list = $this->db->fetchAll($select);
-            $this->dynamicsNum = $this->db->fetchRow($this->db->select('count(1) AS count')->from('table.dynamics'))['count'];
-            $this->dynamics->pushed($list, new Dynamics_Page(
-                $pageSize, $this->dynamicsNum, $this->page, 4, [
-                    "isPjax" => (boolean)$format["isPjax"]
-                ]
-            ));
-        }
-    }
+            if ($this->total > $this->pageSize) {
+                $query = Typecho_Request::getInstance()->makeUriByRequest('paging={page}');
 
-    /**
-     * 展示分页
-     * @param bool $import
-     */
-    public function parsePage($import = false)
-    {
-        $this->type = "page";
-        if ($import) {
-            $this->import("functions.php");
-        }
-        $this->parse($this->_params);
-        if ($import) {
-            $this->import('page.php');
+                /** 使用盒状分页 */
+                $nav = new Typecho_Widget_Helper_PageNavigator_Box($this->total,
+                    $this->page, $this->pageSize, $query);
+
+                echo '<' . $template['wrapTag'] . (empty($template['wrapClass'])
+                        ? '' : ' class="' . $template['wrapClass'] . '"') . '>';
+                $nav->render($prev, $next, $splitPage, $splitWord, $template);
+                echo '</' . $template['wrapTag'] . '>';
+            }
         }
     }
 
@@ -256,5 +269,14 @@ class Dynamics_Archive extends Typecho_Widget
     public function description()
     {
         echo $this->description ?: $this->options->description;
+    }
+
+    /**
+     * 弃用
+     *
+     */
+    public function dispatch()
+    {
+        $this->post();
     }
 }

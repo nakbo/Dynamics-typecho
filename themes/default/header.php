@@ -21,7 +21,7 @@
 
 <div class="nav">
     <a href="<?php $this->options->siteUrl(); ?>" target="_blank">主页</a>丨
-    <a href="<?php $this->option->dynamicsUrl(); ?>">动态</a>
+    <a href="<?php $this->option->homepage(); ?>">动态</a>
 </div>
 
 <?php echo "第" . $this->page . "页"; ?>

@@ -34,7 +34,6 @@ class Dynamics_Action extends Dynamics_Abstract implements Widget_Interface_Do
     {
         $db = Typecho_Db::get();
         $dynamic['authorId'] = $uid;
-//        $dynamic['agent'] = $_SERVER['HTTP_USER_AGENT'];
         $db->query($db
             ->update('table.dynamics')
             ->rows($dynamic)
@@ -94,8 +93,8 @@ class Dynamics_Action extends Dynamics_Abstract implements Widget_Interface_Do
         $option = Typecho_Widget::widget('Dynamics_Option');
 
         foreach ($dynamicRough as $dynamic) {
-            $dynamic['title'] = date("m月d日, Y年", $dynamic["created"]);
-            $dynamic['permalink'] = $option->applyUrl($dynamic["did"]);
+            $dynamic['title'] = date('m月d日, Y年', $dynamic['created']);
+            $dynamic['permalink'] = $option->applyUrl($dynamic['did']);
             $list[] = $dynamic;
         }
 
@@ -108,17 +107,17 @@ class Dynamics_Action extends Dynamics_Abstract implements Widget_Interface_Do
      */
     public function addOf()
     {
-        if (!$this->hasLogin) {
+        if (!$this->widget('Widget_User')->hasLogin()) {
             $this->error('请登录后台后重试');
         }
-        $date = time();
+
         $dynamic['text'] = "滴滴打卡";
-        $dynamic['modified'] = $date;
+        $dynamic['modified'] = $date = time();
         $dynamic['created'] = $date;
 
-        /** 插入数据 */
-        $result = Dynamics_Action::insertOf($this->user->uid, $dynamic);
-        $this->success($this->filterParam($result));
+        $this->success($this->filterParam(
+            Dynamics_Action::insertOf($this->user->uid, $dynamic)
+        ));
     }
 
     /**
@@ -128,17 +127,18 @@ class Dynamics_Action extends Dynamics_Abstract implements Widget_Interface_Do
      */
     public function saveOf()
     {
-        if (!$this->hasLogin) {
+        if (!$this->widget('Widget_User')->hasLogin()) {
             $this->error('请登录后台后重试');
         }
-        $dynamic = [
+
+        $dynamic = array(
             'did' => $this->request->get('did', 0),
             'text' => $this->request->get('text', '')
-        ];
+        );
 
-        /** 保存数据 */
-        $result = Dynamics_Action::modifyOf($this->user->uid, $dynamic);
-        $this->success($this->filterParam($result));
+        $this->success($this->filterParam(
+            Dynamics_Action::modifyOf($this->user->uid, $dynamic)
+        ));
     }
 
     /**
@@ -147,7 +147,7 @@ class Dynamics_Action extends Dynamics_Abstract implements Widget_Interface_Do
      */
     public function listOf()
     {
-        if (!$this->hasLogin) {
+        if (!$this->widget('Widget_User')->hasLogin()) {
             $this->error('请登录后台后重试');
         }
         $lid = $this->request->get('lastDid', 0);
@@ -172,10 +172,11 @@ class Dynamics_Action extends Dynamics_Abstract implements Widget_Interface_Do
 
     /**
      * 删除
+     * @throws Typecho_Exception
      */
     public function removeOf()
     {
-        if (!$this->hasLogin) {
+        if (!$this->widget('Widget_User')->hasLogin()) {
             $this->error('请登录后台后重试');
         }
         $id = $this->request->get('did', 0);

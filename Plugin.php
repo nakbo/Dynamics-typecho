@@ -20,8 +20,7 @@ class Dynamics_Plugin implements Typecho_Plugin_Interface
      */
     public static function activate()
     {
-        $packageName = basename(dirname(__FILE__));
-        if ($packageName != 'Dynamics') {
+        if (basename(dirname(__FILE__)) != 'Dynamics') {
             throw new Typecho_Plugin_Exception(_t('插件目录名必须为 Dynamics'));
         }
 
@@ -77,7 +76,7 @@ class Dynamics_Plugin implements Typecho_Plugin_Interface
         Helper::addPanel(1, 'Dynamics/Themes.php', '动态外观', '动态主题列表', 'administrator');
         Helper::addAction('dynamics', 'Dynamics_Action');
         Helper::addRoute('dynamics-index', Dynamics_Plugin::DYNAMICS_ROUTE, 'Dynamics_Archive', 'index');
-        Helper::addRoute('dynamics-route', Dynamics_Plugin::DYNAMICS_ROUTE . "[slug].html", 'Dynamics_Archive', 'dispatch');
+        Helper::addRoute('dynamics-route', Dynamics_Plugin::DYNAMICS_ROUTE . '[slug].html', 'Dynamics_Archive', 'post');
 
         return _t('动态插件已经激活');
     }
@@ -109,7 +108,7 @@ class Dynamics_Plugin implements Typecho_Plugin_Interface
             Typecho_Request::getInstance(),
             Typecho_Response::getInstance()
         );
-        $action->parsePage(true);
+        $action->page(true);
     }
 
     /**
@@ -124,7 +123,7 @@ class Dynamics_Plugin implements Typecho_Plugin_Interface
             Typecho_Request::getInstance(),
             Typecho_Response::getInstance()
         );
-        $action->parsePage();
+        $action->page();
         return $action;
     }
 
@@ -141,28 +140,28 @@ class Dynamics_Plugin implements Typecho_Plugin_Interface
         $themeConfig = new Typecho_Widget_Helper_Form_Element_Hidden('themeConfig');
         $form->addInput($themeConfig);
 
+        $radio = new Typecho_Widget_Helper_Form_Element_Radio(
+            'followPath', array(
+            '0' => '动态主题目录源',
+            '1' => '博客主题目录源',
+        ), '0', '动态主题源', '一般使用动态主题目录源  <a href="https://nabo.krait.cn/docs/#/course-dynamics?id=%E5%8A%A8%E6%80%81%E4%B8%BB%E9%A2%98%E6%BA%90" target="_blank">详情点击</a>');
+        $form->addInput($radio);
+
+        $btn = new Typecho_Widget_Helper_Form_Element_Submit();
+        $btn->input->setAttribute('class', 'btn');
+        $btn->input->setAttribute('type', 'button');
+        $btn->input->setAttribute('onclick', "javascrtpt:window.open('" . Helper::options()->adminUrl . "/extending.php?panel=Dynamics%2FThemes.php')");
+        $form->addItem($btn);
+        $btn->value(_t('设置动态外观'));
+
         $radio = new Typecho_Widget_Helper_Form_Element_Text(
             'title', null, '我的动态',
             '动态标题', '这是动态页面的标题.');
         $form->addInput($radio);
 
-        $radio = new Typecho_Widget_Helper_Form_Element_Radio(
-            'followPath', array(
-            '0' => '动态主题目录源',
-            '1' => '博客主题目录源',
-        ), '0', '动态主题源', '动态主题目录源: 则使用在目录/usr/plugins/Dynamics/themes下的主题<br>博客主题目录源: 则使用在目录/usr/themes下的主题 (其中主题信息里的dependence为Dynamics才可被扫描)');
-        $form->addInput($radio);
-
         $radio = new Typecho_Widget_Helper_Form_Element_Text(
             'pageSize', null, '5',
-            '动态首页每页数目', '此数目用于动态首页每页显示的文章数目.');
-        $form->addInput($radio);
-
-        $radio = new Typecho_Widget_Helper_Form_Element_Radio(
-            'isPjax', array(
-            '0' => '使用 JavaScript 进行跳转',
-            '1' => '使用 HTML (a 标签)进行跳转',
-        ), '1', '动态页面部分的链接跳转实现', '使用 HTML (a 标签) 方式进行跳转，有利于部分【动态主题】的 Pjax 实现');
+            '每页数目', '此数目用于动态首页每页显示的文章数目.');
         $form->addInput($radio);
 
         $radio = new Typecho_Widget_Helper_Form_Element_Text(
@@ -174,6 +173,13 @@ class Dynamics_Plugin implements Typecho_Plugin_Interface
             'avatarSize', null, '45',
             '头像图像大小', '调用不合适尺寸的图片会对前端加载速度造成影响，请按照自己的需求选择输出合适尺寸的图片<br>单位：px');
         $form->addInput($radio);
+
+        $btn = new Typecho_Widget_Helper_Form_Element_Submit();
+        $btn->input->setAttribute('class', 'btn');
+        $btn->input->setAttribute('type', 'button');
+        $btn->input->setAttribute('onclick', "javascrtpt:window.open('" . Helper::options()->adminUrl . "/extending.php?panel=Dynamics%2FManage.php')");
+        $form->addItem($btn);
+        $btn->value(_t('管理动态'));
     }
 
     /**
@@ -208,9 +214,9 @@ class Dynamics_Plugin implements Typecho_Plugin_Interface
             $configFile = $option->themesFile($theme, 'functions.php');
             if (file_exists($configFile)) {
                 require_once $configFile;
-                if (function_exists('themeConfig')) {
+                if (function_exists('_themeConfig')) {
                     $form = new Typecho_Widget_Helper_Form();
-                    themeConfig($form);
+                    _themeConfig($form);
                     $configTemp = $form->getValues() ?: [];
                 }
             }

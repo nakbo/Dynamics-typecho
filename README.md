@@ -4,8 +4,8 @@
 
 ## 使用教程
 
+ - https://nabo.krait.cn/docs/#/course-dynamics
  - https://github.com/krait-team/Dynamics-typecho/wiki
- - https://docs.nabo.krait.cn/#/course-dynamics
 
 **使用动态主题的page.php**
 

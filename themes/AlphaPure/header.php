@@ -27,6 +27,6 @@
 <div class="container" id="pjax-container">
     <div class="nav">
         <a href="<?php $this->options->siteUrl(); ?>" target="_blank">主页</a>丨
-        <a href="<?php $this->option->dynamicsUrl(); ?>">动态</a>丨
-        <a href="<?php $this->option->dynamicsUrl(); ?>"><?php $this->options->title() ?> &nbsp;&raquo;</a>
+        <a href="<?php $this->option->homepage(); ?>">动态</a>丨
+        <a href="<?php $this->option->homepage(); ?>"><?php $this->options->title() ?> &nbsp;&raquo;</a>
     </div>

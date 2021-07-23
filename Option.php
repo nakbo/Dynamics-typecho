@@ -8,16 +8,6 @@ class Dynamics_Option extends Typecho_Widget
     private $options;
 
     /**
-     * @var string
-     */
-    public $dynamicsUrl, $theme, $themeUrl, $themesPath, $themesFile, $themesUrl;
-
-    /**
-     * @var string
-     */
-    protected $themeDir, $_themeDir;
-
-    /**
      * @param $request
      * @param $response
      * @param null $params
@@ -32,24 +22,20 @@ class Dynamics_Option extends Typecho_Widget
         if (is_array($themeConfig = unserialize($config['themeConfig']))) {
             $config = array_merge($config, $themeConfig);
         }
-        unset($config['themeConfig']);
-        foreach ($config as $name => $value) {
-            $this->{$name} = $value;
+        if (is_array($config)) {
+            $this->push($config);
         }
 
         if ($this->followPath) {
-            $this->themesPath = "/";
+            $this->themesPath = '/';
             $this->themesFile = __TYPECHO_ROOT_DIR__ . __TYPECHO_THEME_DIR__ . $this->themesPath;
             $this->themesUrl = Typecho_Common::url(__TYPECHO_THEME_DIR__ . "/{$this->themesPath}/", $this->options->index);
         } else {
-            $this->themesPath = "/Dynamics/themes/";
+            $this->themesPath = '/Dynamics/themes/';
             $this->themesFile = __TYPECHO_ROOT_DIR__ . __TYPECHO_PLUGIN_DIR__ . $this->themesPath;
             $this->themesUrl = Typecho_Common::url("{$this->themesPath}/", $this->options->pluginUrl);
         }
-        $this->themeUrl = $this->themesUrl . $this->theme . '/';
-        $this->dynamicsUrl = Typecho_Common::url(Dynamics_Plugin::DYNAMICS_ROUTE, $this->options->index);
-        $this->_themeDir = rtrim($this->options->themeFile($this->options->theme), '/') . '/';
-        $this->themeDir = $this->themesFile . $this->theme . '/';
+        $this->homepage = Typecho_Common::url(Dynamics_Plugin::DYNAMICS_ROUTE, $this->options->index);
     }
 
     /**
@@ -60,9 +46,7 @@ class Dynamics_Option extends Typecho_Widget
      */
     public function applyUrl($did)
     {
-        $slug = base64_encode($did);
-        $slug = str_replace('=', '', $slug) . '.html';
-        return $this->dynamicsUrl . $slug;
+        return $this->homepage . str_replace('=', '', base64_encode($did)) . '.html';
     }
 
     /**
@@ -73,26 +57,27 @@ class Dynamics_Option extends Typecho_Widget
      */
     public static function parseUrl($slug)
     {
-        $slug = strval($slug) . '==';
-        $did = base64_decode($slug);
-        return intval($did) > 0 ? $did : NULL;
-    }
-
-    /**
-     * 标题
-     */
-    public function title()
-    {
-        echo $this->title;
+        return intval($did = base64_decode(strval($slug) . '==')) > 0 ? $did : NULL;
     }
 
     /**
      * 动态首页
+     *
      * @param $path
+     */
+    public function homepage($path = NULL)
+    {
+        echo $this->homepage . $path;
+    }
+
+    /**
+     * 弃用
+     *
+     * @param null $path
      */
     public function dynamicsUrl($path = NULL)
     {
-        echo $this->dynamicsUrl . $path;
+        $this->homepage($path);
     }
 
     /**
@@ -102,7 +87,7 @@ class Dynamics_Option extends Typecho_Widget
      */
     public function themeUrl($path)
     {
-        echo $this->themeUrl . $path;
+        echo $this->themesUrl . $this->theme . '/' . $path;
     }
 
     /**
@@ -113,7 +98,7 @@ class Dynamics_Option extends Typecho_Widget
      */
     public function themeFile($path)
     {
-        return $this->themeDir . $path;
+        return $this->themesFile . $this->theme . '/' . $path;
     }
 
     /**
@@ -124,7 +109,7 @@ class Dynamics_Option extends Typecho_Widget
      */
     public function _themeFile($path)
     {
-        return $this->_themeDir . $path;
+        return rtrim($this->options->themeFile($this->options->theme), '/') . '/' . $path;
     }
 
     /**
