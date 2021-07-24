@@ -61,7 +61,9 @@ class Dynamics_Archive extends Typecho_Widget
             ->where('table.dynamics.status != ?', 'hidden')
             ->order('table.dynamics.created', Typecho_Db::SORT_DESC)
             ->page($this->page, $this->pageSize), [$this->dynamics, 'push']);
-        $this->total = $this->dynamics->size($this->db->select('count(1) AS count'));
+        $this->total = $this->dynamics->size($this->db->select()
+            ->where('table.dynamics.status != ?', 'hidden')
+        );
     }
 
     /**
@@ -257,18 +259,22 @@ class Dynamics_Archive extends Typecho_Widget
 
     /**
      * 关键词
+     *
+     * @return mixed
      */
-    public function keywords()
+    public function ___keywords()
     {
-        echo $this->keywords ?: $this->options->keywords;
+        return $this->keywords ?: $this->options->keywords;
     }
 
     /**
      * 描述
+     *
+     * @return mixed
      */
-    public function description()
+    public function ___description()
     {
-        echo $this->description ?: $this->options->description;
+        return $this->description ?: $this->options->description;
     }
 
     /**
