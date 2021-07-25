@@ -6,7 +6,7 @@
  * @package Dynamics
  * @author 南博工作室
  * @version 2.1.0
- * @link https://github.com/krait-team/Dynamics-typecho
+ * @link https://github.com/krait-team/Dynamics-typecho/graphs/contributors
  */
 class Dynamics_Plugin implements Typecho_Plugin_Interface
 {
