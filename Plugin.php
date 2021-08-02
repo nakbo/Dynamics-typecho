@@ -257,21 +257,24 @@ class Dynamics_Plugin implements Typecho_Plugin_Interface
 
         $dynamicNum = $db->fetchObject($db->select(array('COUNT(DISTINCT table.dynamics.did)' => 'num'))
             ->from('table.dynamics')
-            ->where('table.dynamics.status != ? AND table.dynamics.status != ?', 'private', 'hidden')
+            ->where('table.dynamics.status = ?', 'publish')
             ->cleanAttribute('group'))->num;
         if (empty($dynamicNum)) {
             $db->fetchAll($select, [$archive, 'push']);
             return;
         }
 
+        $dynamicSize = 5;
+        $archive->parameter->pageSize += $dynamicSize;
+
         $article = $select->prepare($select);
         $dynamic = $db->select('table.dynamics.did as cid', 'null as title', 'null as slug', 'table.dynamics.created', 'table.dynamics.authorId',
             'table.dynamics.modified', "'dynamic' as type", 'table.dynamics.status', 'table.dynamics.text', '0 as commentsNum', '0 as order',
             'null as template', 'null as password', '0 as allowComment', '0 as allowPing', '0 as allowFeed', '0 as parent')
             ->from('table.dynamics')
-            ->where('table.dynamics.status != ? AND table.dynamics.status != ?', 'private', 'hidden')
+            ->where('table.dynamics.status = ?', 'publish')
             ->order('table.dynamics.created', Typecho_Db::SORT_DESC)
-            ->page(isset($archive->request->page) ? $archive->request->page : 1, 5);
+            ->page(isset($archive->request->page) ? $archive->request->page : 1, $dynamicSize);
         $dynamic = $dynamic->prepare($dynamic);
 
         $articleNum = $db->fetchObject($archive->getCountSql()
@@ -300,7 +303,6 @@ class Dynamics_Plugin implements Typecho_Plugin_Interface
                 $value['month'] = $value['date']->month;
                 $value['day'] = $value['date']->day;
 
-                $archive->row = $value;
                 $archive->length++;
                 $archive->stack[] = $value;
             } else {
