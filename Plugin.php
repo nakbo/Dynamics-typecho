@@ -143,6 +143,12 @@ class Dynamics_Plugin implements Typecho_Plugin_Interface
         $themeConfig = new Typecho_Widget_Helper_Form_Element_Hidden('themeConfig');
         $form->addInput($themeConfig);
 
+        $radio = new Typecho_Widget_Helper_Form_Element_Text(
+            'archiveId', null, 0,
+            '附件归档', '这是动态附件归档的文章(cid), 请认真填写, 若为 0 表示不归档动态里的附件<br/>若动态里引用的文件未归档附件时候, 在<strong>动态发布时候</strong>将这些附件归档在这个文章里, 以防清理未规定附件时候被删掉.');
+        $radio->input->setAttribute('class', 'mono w-35');
+        $form->addInput($radio);
+
         $radio = new Typecho_Widget_Helper_Form_Element_Radio(
             'followPath', array(
             '0' => '动态主题目录源',
@@ -183,6 +189,26 @@ class Dynamics_Plugin implements Typecho_Plugin_Interface
         $btn->input->setAttribute('onclick', "javascrtpt:window.open('" . Helper::options()->adminUrl . "/extending.php?panel=Dynamics%2FManage.php')");
         $form->addItem($btn);
         $btn->value(_t('管理动态'));
+    }
+
+    /**
+     * @param $settings
+     * @return string|null
+     * @throws Typecho_Db_Exception
+     * @throws Typecho_Exception
+     * @throws Typecho_Plugin_Exception
+     */
+    public static function configCheck($settings)
+    {
+        $config = Helper::options()->plugin('Dynamics');
+        if ($settings['archiveId'] != $config->archiveId) {
+            $db = Typecho_Db::get();
+            if (empty($db->fetchRow($db->select('cid')->from('table.contents')
+                ->where('cid = ? AND type != ?', $settings['archiveId'], 'attachment')))) {
+                return "提交的附件归档文章不存在 [cid={$settings['archiveId']}]";
+            }
+        }
+        return null;
     }
 
     /**

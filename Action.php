@@ -4,12 +4,86 @@ class Dynamics_Action extends Dynamics_Abstract implements Widget_Interface_Do
 {
 
     /**
+     * 同步附件
+     *
+     * @access protected
+     * @param $did
+     * @param $text
+     * @return void
+     * @throws Typecho_Db_Exception
+     * @throws Typecho_Exception
+     * @throws Typecho_Plugin_Exception
+     */
+    public static function attachOf($did, $text)
+    {
+        $option = Helper::options()->plugin('Dynamics');
+        if (empty($did) || empty($option->archiveId)) {
+            return;
+        }
+        $db = Typecho_Db::get();
+        if (empty($db->fetchRow($db->select('cid')->from('table.contents')
+            ->where('cid = ? AND type != ?', $option->archiveId, 'attachment')))) {
+            return;
+        }
+
+        Typecho_Widget::widget('Widget_Contents_Attachment_Unattached')->to($attach);
+        $order = 0;
+        while ($attach->next()) {
+            if (strpos($text, $attach->attachment->url) !== false) {
+                $content = unserialize($attach->attachment->__toString());
+                $content['dynamic'] = $did;
+                unset($content['url'], $content['isImage']);
+
+                $db->query($db->update('table.contents')
+                    ->rows(array('text' => serialize($content), 'parent' => $option->archiveId, 'order' => ++$order))
+                    ->where('cid = ? AND type = ?', $attach->cid, 'attachment')
+                );
+                unset($content);
+            }
+        }
+        unset($order);
+    }
+
+    /**
+     * 取消附件关联
+     *
+     * @access protected
+     * @param integer $did 内容id
+     * @return void
+     * @throws Typecho_Db_Exception
+     * @throws Typecho_Exception
+     * @throws Typecho_Plugin_Exception
+     */
+    public static function unAttachOf($did)
+    {
+        $option = Helper::options()->plugin('Dynamics');
+        if (empty($did) || empty($option->archiveId)) {
+            return;
+        }
+
+        $db = Typecho_Db::get();
+        Typecho_Widget::widget('Widget_Contents_Attachment_Related', 'parentId=' . $option->archiveId)->to($attach);
+
+        while ($attach->next()) {
+            if ($did == $attach->attachment->dynamic) {
+                $content = unserialize($attach->attachment->__toString());
+                unset($content['dynamic'], $content['url'], $content['isImage']);
+                $db->query($db->update('table.contents')
+                    ->rows(array('text' => serialize($content), 'parent' => 0))
+                    ->where('cid = ? AND type = ?', $attach->cid, 'attachment'));
+                unset($content);
+            }
+        }
+    }
+
+    /**
      * 插入
      *
      * @param $uid
      * @param $dynamic
      * @return mixed
      * @throws Typecho_Db_Exception
+     * @throws Typecho_Exception
      */
     public static function insertOf($uid, $dynamic)
     {
@@ -19,6 +93,7 @@ class Dynamics_Action extends Dynamics_Abstract implements Widget_Interface_Do
         $dynamic['did'] = $db->query($db
             ->insert('table.dynamics')
             ->rows($dynamic));
+        self::attachOf($dynamic['did'], $dynamic['text']);
         return $dynamic;
     }
 
@@ -29,6 +104,7 @@ class Dynamics_Action extends Dynamics_Abstract implements Widget_Interface_Do
      * @param $dynamic
      * @return mixed
      * @throws Typecho_Db_Exception
+     * @throws Typecho_Exception
      */
     public static function modifyOf($uid, $dynamic)
     {
@@ -38,6 +114,7 @@ class Dynamics_Action extends Dynamics_Abstract implements Widget_Interface_Do
             ->update('table.dynamics')
             ->rows($dynamic)
             ->where('did = ?', $dynamic['did']));
+        self::attachOf($dynamic['did'], $dynamic['text']);
         return $dynamic;
     }
 
@@ -48,6 +125,8 @@ class Dynamics_Action extends Dynamics_Abstract implements Widget_Interface_Do
      * @param $list
      * @return int
      * @throws Typecho_Db_Exception
+     * @throws Typecho_Exception
+     * @throws Typecho_Plugin_Exception
      */
     public static function deleteOf($uid, $list)
     {
@@ -55,10 +134,10 @@ class Dynamics_Action extends Dynamics_Abstract implements Widget_Interface_Do
         $deleteCount = 0;
         foreach ($list as $did) {
             if ($db->query($db->delete('table.dynamics')
-                ->where('authorId', $uid)
-                ->where('did = ?', $did))) {
+                ->where('authorId', $uid)->where('did = ?', $did))) {
                 $deleteCount++;
             }
+            self::unAttachOf($did);
         }
         return $deleteCount;
     }
@@ -111,13 +190,14 @@ class Dynamics_Action extends Dynamics_Abstract implements Widget_Interface_Do
             $this->error('请登录后台后重试');
         }
 
-        $dynamic['text'] = "滴滴打卡";
-        $dynamic['modified'] = $date = time();
-        $dynamic['created'] = $date;
+        $dynamic['text'] = '滴滴打卡';
+        $dynamic['created'] = $date = time();
+        $dynamic['modified'] = $date;
 
-        $this->success($this->filterParam(
-            Dynamics_Action::insertOf($this->user->uid, $dynamic)
-        ));
+        $dynamic = Dynamics_Action::insertOf($this->user->uid, $dynamic);
+        $dynamic['nickname'] = $this->user->screenName;
+
+        $this->success($this->filterParam($dynamic));
     }
 
     /**
@@ -137,7 +217,7 @@ class Dynamics_Action extends Dynamics_Abstract implements Widget_Interface_Do
         );
 
         $this->success($this->filterParam(
-            Dynamics_Action::modifyOf($this->user->uid, $dynamic)
+            self::modifyOf($this->user->uid, $dynamic)
         ));
     }
 
@@ -152,7 +232,7 @@ class Dynamics_Action extends Dynamics_Abstract implements Widget_Interface_Do
         }
         $lid = $this->request->get('lastDid', 0);
         $size = 10;
-        $select = $this->db->select('table.dynamics.*, table.users.screenName author_name')
+        $select = $this->db->select('table.dynamics.*, table.users.screenName as nickname')
             ->from('table.dynamics')
             ->join('table.users', 'table.dynamics.authorId = table.users.uid')
             ->where('uid = ?', $this->user->uid);
@@ -179,12 +259,16 @@ class Dynamics_Action extends Dynamics_Abstract implements Widget_Interface_Do
         if (!$this->widget('Widget_User')->hasLogin()) {
             $this->error('请登录后台后重试');
         }
-        $id = $this->request->get('did', 0);
-        if (!$id) {
-            $this->success();
+        $did = $this->request->get('did', 0);
+        if (empty($did)) {
+            $this->error('动态不存在');
         }
-        $this->db->query($this->db->delete('table.dynamics')->where('did = ?', $id));
-        $this->success();
+
+        if (self::deleteOf($this->user->uid, [$did])) {
+            $this->success();
+        } else {
+            $this->error('没有可以删除的动态');
+        }
     }
 
     /**
@@ -272,7 +356,7 @@ class Dynamics_Action extends Dynamics_Abstract implements Widget_Interface_Do
 
         $config = $form->getAllRequest();
 
-        $options = $this->options->plugin("Dynamics");
+        $options = $this->options->plugin('Dynamics');
         $settings = [];
         foreach ($options as $key => $val) {
             $settings[$key] = $val;
@@ -294,8 +378,7 @@ class Dynamics_Action extends Dynamics_Abstract implements Widget_Interface_Do
     private function error($message = '', $data = [])
     {
         $this->response->throwJson([
-            'result' => false,
-            'message' => $message,
+            'code' => 0, 'msg' => $message,
             'data' => $data
         ]);
     }
@@ -309,8 +392,7 @@ class Dynamics_Action extends Dynamics_Abstract implements Widget_Interface_Do
     private function success($data = [], $message = '')
     {
         $this->response->throwJson([
-            'result' => true,
-            'message' => $message,
+            'code' => 1, 'msg' => $message,
             'data' => $data
         ]);
     }
@@ -331,9 +413,12 @@ class Dynamics_Action extends Dynamics_Abstract implements Widget_Interface_Do
 
         $option = Typecho_Widget::widget('Dynamics_Option');
 
-        $dynamic['title'] = $statusName . date("m月d日, Y年", $dynamic["created"]);
-        $dynamic['url'] = $option->applyUrl($dynamic["did"]);
-        $dynamic['desc'] = mb_substr(strip_tags($dynamic["text"]), 0, 20, 'utf-8');
+        $dynamic['title'] = $statusName . date('m月d日, Y年', $dynamic['created']);
+        $dynamic['url'] = $option->applyUrl($dynamic['did']);
+        $dynamic['desc'] = mb_substr(strip_tags($dynamic['text']),
+            0, 20, 'utf-8'
+        );
+
         return $dynamic;
     }
 

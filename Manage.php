@@ -1,6 +1,12 @@
 <?php
 include 'header.php';
 include 'menu.php';
+$post = new Widget_Contents_Post_Edit(
+    Typecho_Request::getInstance(), Typecho_Response::getInstance()
+);
+$post->push([
+    'isMarkdown' => true
+]);
 ?>
 <style type="text/css">
     .dynamic-row {
@@ -61,19 +67,19 @@ include 'menu.php';
         float: right;
     }
 
-    .dynamic-left .dynamic-loadmore {
+    .dynamic-left .dynamic-more-load {
         cursor: pointer;
     }
 
-    .dynamic-left .dynamic-loadmore .loading {
+    .dynamic-left .dynamic-more-load .loading {
         display: none;
     }
 
-    .dynamic-left .dynamic-nomore {
+    .dynamic-left .dynamic-more-no {
         display: none;
     }
 
-    .dynamic-left .dynamic-loadmore, .dynamic-left .dynamic-nomore {
+    .dynamic-left .dynamic-more-load, .dynamic-left .dynamic-more-no {
         text-align: center;
         padding: 10px 10px;
     }
@@ -84,7 +90,6 @@ include 'menu.php';
         border-left: 8px rgba(140, 162, 157, 0.15) solid;
         margin-left: -8px;
         min-height: 600px !important;
-        display: none;
     }
 
     .dynamic-right .title {
@@ -127,13 +132,11 @@ include 'menu.php';
                         <div class="dynamic-list">
                             <div class="dynamic-add">我的动态</div>
                             <div class="dynamic-body"></div>
-                            <div class="dynamic-loadmore" href="javascript:void(0)">
+                            <div class="dynamic-more-load" href="javascript:void(0)">
                                 <span>加载更多</span>
-                                <span class="loading"><img class="avatar"
-                                                           src="<?php $options->pluginUrl("Dynamics/img/balls.gif"); ?>"
-                                                           alt="loading" width="12" height="12"/></span>
+                                <span class="loading">中...</span>
                             </div>
-                            <div class="dynamic-nomore">没有更多动态了</div>
+                            <div class="dynamic-more-no">没有更多动态了</div>
                         </div>
                     </div>
                     <div class="col-mb-8 dynamic-right">
@@ -161,385 +164,152 @@ include 'menu.php';
 include 'copyright.php';
 include 'common-js.php';
 include 'table-js.php';
-include 'footer.php';
+include 'editor-js.php';
 ?>
-
-<script src="<?php $options->adminStaticUrl('js', 'pagedown.js?v=' . $suffixVersion); ?>"></script>
-<script src="<?php $options->pluginUrl('Dynamics/js/pagedown-extra.js?v=' . $suffixVersion); ?>"></script>
-<script src="<?php $options->pluginUrl('Dynamics/js/diff.js?v=' . $suffixVersion); ?>"></script>
-
 <script>
     $(document).ready(function () {
-        var textarea = $('#text'),
-            toolbar = $('<div class="editor" id="wmd-button-bar" />').insertBefore(textarea.parent()),
-            preview = $('<div id="wmd-preview" class="wmd-hidetab" />').insertAfter('.editor');
-        var options = {};
+        function layoutOf(data) {
+            return '<div class="dynamic-list-item" data-id="' + data.did + '">' +
+                '<div class="title">' + data.title + '<a href="' + data.url + '" target="_blank"><i class="i-exlink"></i></a></div>' +
+                '<div class="subtitle">' +
+                '<span class="desc">' + data.desc + '</span>' +
+                '<span class="author">' + data.nickname + '</span>' +
+                '</div>' +
+                '</div>';
+        }
 
-        options.strings = {
-            bold: '<?php _e('加粗'); ?> <strong> Ctrl+B',
-            boldexample: '<?php _e('加粗文字'); ?>',
+        function message(notice, noticeType = 'error') {
+            let head = $('.typecho-head-nav'),
+                p = $('<div class="message popup ' + noticeType + '">'
+                    + '<ul><li>' + notice + '</li></ul></div>'), offset = 0;
 
-            italic: '<?php _e('斜体'); ?> <em> Ctrl+I',
-            italicexample: '<?php _e('斜体文字'); ?>',
-
-            link: '<?php _e('链接'); ?> <a> Ctrl+L',
-            linkdescription: '<?php _e('请输入链接描述'); ?>',
-
-            quote: '<?php _e('引用'); ?> <blockquote> Ctrl+Q',
-            quoteexample: '<?php _e('引用文字'); ?>',
-
-            code: '<?php _e('代码'); ?> <pre><code> Ctrl+K',
-            codeexample: '<?php _e('请输入代码'); ?>',
-
-            image: '<?php _e('图片'); ?> <img> Ctrl+G',
-            imagedescription: '<?php _e('请输入图片描述'); ?>',
-
-            olist: '<?php _e('数字列表'); ?> <ol> Ctrl+O',
-            ulist: '<?php _e('普通列表'); ?> <ul> Ctrl+U',
-            litem: '<?php _e('列表项目'); ?>',
-
-            heading: '<?php _e('标题'); ?> <h1>/<h2> Ctrl+H',
-            headingexample: '<?php _e('标题文字'); ?>',
-
-            hr: '<?php _e('分割线'); ?> <hr> Ctrl+R',
-            more: '<?php _e('摘要分割线'); ?> <!--more--> Ctrl+M',
-
-            undo: '<?php _e('撤销'); ?> - Ctrl+Z',
-            redo: '<?php _e('重做'); ?> - Ctrl+Y',
-            redomac: '<?php _e('重做'); ?> - Ctrl+Shift+Z',
-
-            fullscreen: '<?php _e('全屏'); ?> - Ctrl+J',
-            exitFullscreen: '<?php _e('退出全屏'); ?> - Ctrl+E',
-            fullscreenUnsupport: '<?php _e('此浏览器不支持全屏操作'); ?>',
-
-            imagedialog: '<p><b><?php _e('插入图片'); ?></b></p><p><?php _e('请在下方的输入框内输入要插入的远程图片地址'); ?></p><p><?php _e('您也可以使用附件功能插入上传的本地图片'); ?></p>',
-            linkdialog: '<p><b><?php _e('插入链接'); ?></b></p><p><?php _e('请在下方的输入框内输入要插入的链接地址'); ?></p>',
-
-            ok: '<?php _e('确定'); ?>',
-            cancel: '<?php _e('取消'); ?>',
-
-            help: '<?php _e('Markdown语法帮助'); ?>'
-        };
-
-        var converter = new Markdown.Converter(),
-            editor = new Markdown.Editor(converter, '', options),
-            diffMatch = new diff_match_patch(), last = '', preview = $('#wmd-preview'),
-            mark = '@mark' + Math.ceil(Math.random() * 100000000) + '@',
-            span = '<span class="diff" />',
-            cache = {};
-
-        Markdown.Extra.init(converter, {
-            'extensions': ["tables", "fenced_code_gfm", "def_list", "attr_list", "footnotes", "strikethrough", "newlines"]
-        });
-        // 自动跟随
-        converter.hooks.chain('postConversion', function (html) {
-            // clear special html tags
-            html = html.replace(/<\/?(\!doctype|html|head|body|link|title|input|select|button|textarea|style|noscript)[^>]*>/ig, function (all) {
-                return all.replace(/&/g, '&amp;')
-                    .replace(/</g, '&lt;')
-                    .replace(/>/g, '&gt;')
-                    .replace(/'/g, '&#039;')
-                    .replace(/"/g, '&quot;');
-            });
-
-            // clear hard breaks
-            html = html.replace(/\s*((?:<br>\n)+)\s*(<\/?(?:p|div|h[1-6]|blockquote|pre|table|dl|ol|ul|address|form|fieldset|iframe|hr|legend|article|section|nav|aside|hgroup|header|footer|figcaption|li|dd|dt)[^\w])/gm, '$2');
-
-            if (html.indexOf('<!--more-->') > 0) {
-                var parts = html.split(/\s*<\!\-\-more\-\->\s*/),
-                    summary = parts.shift(),
-                    details = parts.join('');
-
-                html = '<div class="summary">' + summary + '</div>'
-                    + '<div class="details">' + details + '</div>';
+            if (head.length > 0) {
+                p.insertAfter(head);
+                offset = head.outerHeight();
+            } else {
+                p.prependTo(document.body);
             }
 
+            function checkScroll() {
+                if ($(window).scrollTop() >= offset) {
+                    p.css({
+                        'position': 'fixed',
+                        'top': 0
+                    });
+                } else {
+                    p.css({
+                        'position': 'absolute',
+                        'top': offset
+                    });
+                }
+            }
 
-            var diffs = diffMatch.diff_main(last, html);
-            last = html;
+            $(window).scroll(function () {
+                checkScroll();
+            });
 
-            if (diffs.length > 0) {
-                var stack = [], markStr = mark;
+            checkScroll();
 
-                for (var i = 0; i < diffs.length; i++) {
-                    var diff = diffs[i], op = diff[0], str = diff[1]
-                    sp = str.lastIndexOf('<'), ep = str.lastIndexOf('>');
+            p.slideDown(function () {
+                let t = $(this), color = '#C6D880';
+                if (t.hasClass('error')) {
+                    color = '#FBC2C4';
+                } else if (t.hasClass('notice')) {
+                    color = '#FFD324';
+                }
 
-                    if (op != 0) {
-                        if (sp >= 0 && sp > ep) {
-                            if (op > 0) {
-                                stack.push(str.substring(0, sp) + markStr + str.substring(sp));
-                            } else {
-                                var lastStr = stack[stack.length - 1], lastSp = lastStr.lastIndexOf('<');
-                                stack[stack.length - 1] = lastStr.substring(0, lastSp) + markStr + lastStr.substring(lastSp);
-                            }
-                        } else {
-                            if (op > 0) {
-                                stack.push(str + markStr);
-                            } else {
-                                stack.push(markStr);
-                            }
+                t.effect('highlight', {color: color})
+                    .delay(5000).fadeOut(function () {
+                    $(this).remove();
+                });
+            });
+        }
+
+        let lastDid = 0, selectId = 0, dynData = [],
+            actionUrl = '<?php Helper::options()->index("action/dynamics?do=");?>';
+
+        function loadDynamics() {
+            $.get(actionUrl + 'list', {
+                lastDid: lastDid
+            }, function (data) {
+                if (data.code) {
+                    let len = data.data.length;
+                    if (len === 0) {
+                        $('.dynamic-left .dynamic-more-load').hide();
+                        $('.dynamic-left .dynamic-more-no').show();
+                        message('没有动态噢', 'notice');
+                    } else {
+                        lastDid = data.data[len - 1].did;
+                        let temp = '';
+                        for (let i = 0; i < len; i++) {
+                            dynData['key_' + data.data[i].did] = data.data[i];
+                            temp += layoutOf(data.data[i]);
                         }
 
-                        markStr = '';
-                    } else {
-                        stack.push(str);
+                        $('.dynamic-list .dynamic-body').append(temp);
+                        $('.dynamic-more-load .loading').hide();
+
+                        if (!selectId) {
+                            $('.dynamic-list .dynamic-list-item[data-id=' + data.data[0].did + ']').click();
+                            $('.wmd-edittab a[href="#wmd-preview"]').click();
+                        }
                     }
-                }
-
-                html = stack.join('');
-
-                if (!markStr) {
-                    var pos = html.indexOf(mark), prev = html.substring(0, pos),
-                        next = html.substr(pos + mark.length),
-                        sp = prev.lastIndexOf('<'), ep = prev.lastIndexOf('>');
-
-                    if (sp >= 0 && sp > ep) {
-                        html = prev.substring(0, sp) + span + prev.substring(sp) + next;
-                    } else {
-                        html = prev + span + next;
-                    }
-                }
-            }
-
-            // 替换img
-            html = html.replace(/<(img)\s+([^>]*)\s*src="([^"]+)"([^>]*)>/ig, function (all, tag, prefix, src, suffix) {
-                if (!cache[src]) {
-                    cache[src] = false;
                 } else {
-                    return '<span class="cache" data-width="' + cache[src][0] + '" data-height="' + cache[src][1] + '" '
-                        + 'style="background:url(' + src + ') no-repeat left top; width:'
-                        + cache[src][0] + 'px; height:' + cache[src][1] + 'px; display: inline-block; max-width: 100%;'
-                        + '-webkit-background-size: contain;-moz-background-size: contain;-o-background-size: contain;background-size: contain;" />';
+                    message(data.msg);
                 }
-
-                return all;
             });
-
-            // 替换block
-            html = html.replace(/<(iframe|embed)\s+([^>]*)>/ig, function (all, tag, src) {
-                if (src[src.length - 1] == '/') {
-                    src = src.substring(0, src.length - 1);
-                }
-
-                return '<div style="background: #ddd; height: 40px; overflow: hidden; line-height: 40px; text-align: center; font-size: 12px; color: #777">'
-                    + tag + ' : ' + $.trim(src) + '</div>';
-            });
-
-            return html;
-        });
-
-        function cacheResize() {
-            var t = $(this), w = parseInt(t.data('width')), h = parseInt(t.data('height')),
-                ow = t.width();
-
-            t.height(h * ow / w);
         }
 
-        var to;
-        editor.hooks.chain('onPreviewRefresh', function () {
-            var diff = $('.diff', preview), scrolled = false;
-
-            if (to) {
-                clearTimeout(to);
-            }
-
-            $('img', preview).load(function () {
-                var t = $(this), src = t.attr('src');
-
-                if (scrolled) {
-                    preview.scrollTo(diff, {
-                        offset: -50
-                    });
-                }
-
-                if (!!src && !cache[src]) {
-                    cache[src] = [this.width, this.height];
-                }
-            });
-
-            $('.cache', preview).resize(cacheResize).each(cacheResize);
-
-            var changed = $('.diff', preview).parent();
-            if (!changed.is(preview)) {
-                changed.css('background-color', 'rgba(255,230,0,0.5)');
-                to = setTimeout(function () {
-                    changed.css('background-color', 'transparent');
-                }, 4500);
-            }
-
-            if (diff.length > 0) {
-                var p = diff.position(), lh = diff.parent().css('line-height');
-                lh = !!lh ? parseInt(lh) : 0;
-
-                if (p.top < 0 || p.top > preview.height() - lh) {
-                    preview.scrollTo(diff, {
-                        offset: -50
-                    });
-                    scrolled = true;
-                }
-            }
-        });
-
-        <?php //Typecho_Plugin::factory('admin/editor-js.php')->markdownEditor($content); ?>
-
-        var input = $('#text'), th = textarea.height(), ph = preview.height(),
-            uploadBtn = $('<button type="button" id="btn-fullscreen-upload" class="btn btn-link">'
-                + '<i class="i-upload"><?php _e('附件'); ?></i></button>')
-                .prependTo('.submit .right')
-                .click(function () {
-                    $('a', $('.typecho-option-tabs li').not('.active')).trigger('click');
-                    return false;
-                });
-
-        $('.typecho-option-tabs li').click(function () {
-            uploadBtn.find('i').toggleClass('i-upload-active',
-                $('#tab-files-btn', this).length > 0);
-        });
-
-        editor.hooks.chain('enterFakeFullScreen', function () {
-            th = textarea.height();
-            ph = preview.height();
-            $(document.body).addClass('fullscreen');
-            var h = $(window).height() - toolbar.outerHeight();
-
-            textarea.css('height', h);
-            preview.css('height', h);
-        });
-
-        editor.hooks.chain('enterFullScreen', function () {
-            $(document.body).addClass('fullscreen');
-
-            var h = window.screen.height - toolbar.outerHeight();
-            textarea.css('height', h);
-            preview.css('height', h);
-        });
-
-        editor.hooks.chain('exitFullScreen', function () {
-            $(document.body).removeClass('fullscreen');
-            textarea.height(th);
-            preview.height(ph);
-        });
-
-        function initMarkdown() {
-            editor.run();
-
-            var imageButton = $('#wmd-image-button'),
-                linkButton = $('#wmd-link-button');
-
-            Typecho.insertFileToEditor = function (file, url, isImage) {
-                var button = isImage ? imageButton : linkButton;
-
-                options.strings[isImage ? 'imagename' : 'linkname'] = file;
-                button.trigger('click');
-
-                var checkDialog = setInterval(function () {
-                    if ($('.wmd-prompt-dialog').length > 0) {
-                        $('.wmd-prompt-dialog input').val(url).select();
-                        clearInterval(checkDialog);
-                        checkDialog = null;
-                    }
-                }, 10);
-            };
-
-            Typecho.uploadComplete = function (file) {
-                Typecho.insertFileToEditor(file.title, file.url, file.isImage);
-            };
-
-            // 编辑预览切换
-            var edittab = $('.editor').prepend('<div class="wmd-edittab"><a href="#wmd-editarea" class="active"><?php _e('编辑'); ?></a><a href="#wmd-preview"><?php _e('详情'); ?></a></div>'),
-                editarea = $(textarea.parent()).attr("id", "wmd-editarea");
-
-            $(".wmd-edittab a").click(function () {
-                $(".wmd-edittab a").removeClass('active');
-                $(this).addClass("active");
-                $("#wmd-editarea, #wmd-preview").addClass("wmd-hidetab");
-
-                var selected_tab = $(this).attr("href"),
-                    selected_el = $(selected_tab).removeClass("wmd-hidetab");
-
-                // 预览时隐藏编辑器按钮
-                if (selected_tab === "#wmd-preview") {
-                    $('#dynamic-btn-box .save').hide();
-                    $("#dynamic-btn-box .delete").hide();
-                    $("#wmd-button-row").addClass("wmd-visualhide");
-                } else {
-                    $('#dynamic-btn-box .save').show();
-                    $('#dynamic-btn-box .delete').show();
-                    $("#wmd-button-row").removeClass("wmd-visualhide");
-                }
-
-                // 预览和编辑窗口高度一致
-                $("#wmd-preview").outerHeight($("#wmd-editarea").innerHeight());
-
-                return false;
-            });
-
-            // $('.wmd-edittab a[href="#wmd-preview"]').click();
-        }
-
-        initMarkdown();
-
+        let textarea = $('#text');
         $(document).on('click', '.dynamic-list .dynamic-list-item', function () {
             $('.dynamic-list .dynamic-list-item').each(function (k, ele) {
                 $(ele).removeClass('active');
             });
             $(this).addClass('active');
-
-            var note = notedata['key_' + $(this).attr("data-id")];
-
             selectId = $(this).attr("data-id");
 
-            $('#text').val(note.text);
-
-            editor.refreshPreview();
-
-            $('.dynamic-right').show();
-            // $('.dynamic-right').html($(this).attr("data-id"));
+            let dyn = dynData['key_' + $(this).attr("data-id")];
+            textarea.val(dyn.text);
+            textarea[0].dispatchEvent(new Event('input'));
         });
 
         $(document).on('click', '#dynamic-btn-box .adds', function () {
-            $.get('<?php Helper::options()->index("action/dynamics?do=add");?>', {}, function (data) {
-                if (data.result) {
-                    notedata['key_' + data.data.did] = data.data;
+            $.get(actionUrl + 'add', {}, function (data) {
+                if (data.code) {
+                    message('新增成功', 'success');
+                    dynData['key_' + data.data.did] = data.data;
+                    let temp = layoutOf(data.data);
+                    temp = $(temp);
+                    $('.dynamic-list .dynamic-body').prepend(temp);
 
-                    var note_item_tpl =
-                        '<div class="dynamic-list-item" data-id="' + data.data.did + '">' +
-                        '<div class="title">' + data.data.title + '<a href="' + data.data.url + '" target="_blank"><i class="i-exlink"></i></a></div>' +
-                        '<div class="subtitle">' +
-                        '<span class="desc">' + data.data.desc + '</span>' +
-                        '<span class="author">' + data.data.author_name + '</span>' +
-                        '</div>' +
-                        '</div>';
-                    note_item_tpl = $(note_item_tpl);
-                    $('.dynamic-list .dynamic-body').prepend(note_item_tpl);
-                    note_item_tpl.click();
+                    temp.click();
                     $('.wmd-edittab a[href="#wmd-editarea"]').click();
                     $('.dynamic-right .title').focus();
                 } else {
-                    alert(data.message);
+                    message(data.msg);
                 }
             })
         });
 
-        $(document).on('click', '.dynamic-list .dynamic-loadmore', function () {
-            $('.dynamic-left .dynamic-loadmore .loading').show();
+        $(document).on('click', '.dynamic-list .dynamic-more-load', function () {
+            $('.dynamic-more-load .loading').show();
             loadDynamics();
         });
 
         $(document).on('click', '#dynamic-btn-box .save', function () {
             if (selectId) {
-                $.get('<?php Helper::options()->index("action/dynamics?do=save");?>', {
+                $.get(actionUrl + 'save', {
                     did: selectId,
                     title: $('.dynamic-right .title').val(),
                     text: $('#text').val(),
                 }, function (data) {
-                    if (data.result) {
-                        notedata['key_' + data.data.did] = data.data;
-                        var list_item = $('.dynamic-body .dynamic-list-item[data-id="' + data.data.did + '"]');
+                    if (data.code) {
+                        message('保存成功', 'success');
+                        dynData['key_' + data.data.did] = data.data;
+                        let list_item = $('.dynamic-body .dynamic-list-item[data-id="' + data.data.did + '"]');
                         list_item.find('.subtitle .desc').html(data.data.desc);
                     } else {
-                        alert(data.message);
+                        message(data.msg);
                     }
                 })
             }
@@ -548,12 +318,13 @@ include 'footer.php';
         $(document).on('click', '#dynamic-btn-box .delete', function () {
             if (confirm('确定删除该动态')) {
                 if (selectId) {
-                    $.get('<?php Helper::options()->index("action/dynamics?do=remove");?>', {
+                    $.get(actionUrl + 'remove', {
                         did: selectId
                     }, function (data) {
-                        if (data.result) {
-                            delete notedata['key_' + selectId];
-                            var list_item = $('.dynamic-body .dynamic-list-item[data-id="' + selectId + '"]');
+                        if (data.code) {
+                            message('删除成功', 'success');
+                            delete dynData['key_' + selectId];
+                            let list_item = $('.dynamic-body .dynamic-list-item[data-id="' + selectId + '"]');
                             if (list_item.prev().length !== 0) {
                                 list_item.prev().click();
                             } else if (list_item.next().length !== 0) {
@@ -563,56 +334,15 @@ include 'footer.php';
                             }
                             list_item.remove();
                         } else {
-                            alert(data.message);
+                            message(data.msg);
                         }
-                    })
+                    });
                 }
             }
         });
 
-        var lastDid = 0;
-        var selectId = 0;
-        var notedata = [];
-
-        function loadDynamics() {
-            $.get('<?php Helper::options()->index("action/dynamics?do=list");?>', {
-                lastDid: lastDid
-            }, function (data) {
-                if (data.result) {
-                    var len = data.data.length;
-                    if (len === 0) {
-                        // return;
-                        $('.dynamic-left .dynamic-loadmore').hide();
-                        $('.dynamic-left .dynamic-nomore').show();
-                    } else {
-                        lastDid = data.data[len - 1].did;
-                        var note_item_tpl = '';
-                        for (var i = 0; i < len; i++) {
-                            notedata['key_' + data.data[i].did] = data.data[i];
-                            note_item_tpl +=
-                                '<div class="dynamic-list-item" data-id="' + data.data[i].did + '">' +
-                                '<div class="title">' + data.data[i].title + '<a href="' + data.data[i].url + '" target="_blank"><i class="i-exlink"></i></a></div>' +
-                                '<div class="subtitle">' +
-                                '<span class="desc">' + data.data[i].desc + '</span>' +
-                                '<span class="author">' + data.data[i].author_name + '</span>' +
-                                '</div>' +
-                                '</div>'
-                        }
-                        // console.log(note_item_tpl);
-                        $('.dynamic-list .dynamic-body').append(note_item_tpl);
-                        $('.dynamic-left .dynamic-loadmore .loading').hide();
-
-                        if (!selectId) {
-                            $('.dynamic-list .dynamic-list-item[data-id=' + data.data[0].did + ']').click();
-                            $('.wmd-edittab a[href="#wmd-preview"]').click();
-                        }
-                    }
-                } else {
-                    alert(data.message);
-                }
-            })
-        }
-
         loadDynamics();
     });
 </script>
+
+<?php include 'footer.php'; ?>
