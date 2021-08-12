@@ -2,7 +2,6 @@
 
 class Dynamics_Action extends Dynamics_Abstract implements Widget_Interface_Do
 {
-
     /**
      * 同步附件
      *
@@ -90,10 +89,12 @@ class Dynamics_Action extends Dynamics_Abstract implements Widget_Interface_Do
         $db = Typecho_Db::get();
         $dynamic['authorId'] = $uid;
         $dynamic['agent'] = $_SERVER['HTTP_USER_AGENT'];
+
         $dynamic['did'] = $db->query($db
             ->insert('table.dynamics')
             ->rows($dynamic));
         self::attachOf($dynamic['did'], $dynamic['text']);
+
         return $dynamic;
     }
 
@@ -110,11 +111,13 @@ class Dynamics_Action extends Dynamics_Abstract implements Widget_Interface_Do
     {
         $db = Typecho_Db::get();
         $dynamic['authorId'] = $uid;
+
         $db->query($db
             ->update('table.dynamics')
             ->rows($dynamic)
             ->where('did = ?', $dynamic['did']));
         self::attachOf($dynamic['did'], $dynamic['text']);
+
         return $dynamic;
     }
 
@@ -132,13 +135,15 @@ class Dynamics_Action extends Dynamics_Abstract implements Widget_Interface_Do
     {
         $db = Typecho_Db::get();
         $deleteCount = 0;
+
         foreach ($list as $did) {
             if ($db->query($db->delete('table.dynamics')
-                ->where('authorId', $uid)->where('did = ?', $did))) {
+                ->where('table.dynamics.did = ?', $did))) {
                 $deleteCount++;
+                self::unAttachOf($did);
             }
-            self::unAttachOf($did);
         }
+
         return $deleteCount;
     }
 
@@ -166,18 +171,17 @@ class Dynamics_Action extends Dynamics_Abstract implements Widget_Interface_Do
         $select->order('created', Typecho_Db::SORT_DESC)
             ->page($currentPage, $pageSize);
 
-        $dynamicRough = $db->fetchAll($select);
-
-        $list = [];
+        $data = $db->fetchAll($select);
         $option = Typecho_Widget::widget('Dynamics_Option');
 
-        foreach ($dynamicRough as $dynamic) {
+        $dynamics = [];
+        foreach ($data as $dynamic) {
             $dynamic['title'] = date('m月d日, Y年', $dynamic['created']);
             $dynamic['permalink'] = $option->applyUrl($dynamic['did']);
-            $list[] = $dynamic;
+            $dynamics[] = $dynamic;
         }
 
-        return $list;
+        return $dynamics;
     }
 
     /**
@@ -186,15 +190,14 @@ class Dynamics_Action extends Dynamics_Abstract implements Widget_Interface_Do
      */
     public function addOf()
     {
-        if (!$this->widget('Widget_User')->hasLogin()) {
-            $this->error('请登录后台后重试');
-        }
+        $this->user->pass('editor');
+        $dynamic = array(
+            'text' => '滴滴打卡',
+            'created' => $date = time(),
+            'modified' => $date
+        );
 
-        $dynamic['text'] = '滴滴打卡';
-        $dynamic['created'] = $date = time();
-        $dynamic['modified'] = $date;
-
-        $dynamic = Dynamics_Action::insertOf($this->user->uid, $dynamic);
+        $dynamic = self::insertOf($this->user->uid, $dynamic);
         $dynamic['nickname'] = $this->user->screenName;
 
         $this->success($this->filterParam($dynamic));
@@ -207,10 +210,7 @@ class Dynamics_Action extends Dynamics_Abstract implements Widget_Interface_Do
      */
     public function saveOf()
     {
-        if (!$this->widget('Widget_User')->hasLogin()) {
-            $this->error('请登录后台后重试');
-        }
-
+        $this->user->pass('editor');
         $dynamic = array(
             'did' => $this->request->get('did', 0),
             'text' => $this->request->get('text', '')
@@ -227,19 +227,16 @@ class Dynamics_Action extends Dynamics_Abstract implements Widget_Interface_Do
      */
     public function listOf()
     {
-        if (!$this->widget('Widget_User')->hasLogin()) {
-            $this->error('请登录后台后重试');
-        }
-        $lid = $this->request->get('lastDid', 0);
-        $size = 10;
+        $this->user->pass('editor');
         $select = $this->db->select('table.dynamics.*, table.users.screenName as nickname')
             ->from('table.dynamics')
-            ->join('table.users', 'table.dynamics.authorId = table.users.uid')
-            ->where('uid = ?', $this->user->uid);
-        if ($lid) {
+            ->join('table.users', 'table.dynamics.authorId = table.users.uid');
+
+        if ($lid = $this->request->get('lastDid', 0)) {
             $select->where('table.dynamics.did < ? ', $lid);
         }
-        $select->order('table.dynamics.did', Typecho_Db::SORT_DESC)->limit($size);
+
+        $select->order('table.dynamics.did', Typecho_Db::SORT_DESC)->limit(10);
         $data = $this->db->fetchAll($select);
 
         $dynamics = [];
@@ -256,15 +253,13 @@ class Dynamics_Action extends Dynamics_Abstract implements Widget_Interface_Do
      */
     public function removeOf()
     {
-        if (!$this->widget('Widget_User')->hasLogin()) {
-            $this->error('请登录后台后重试');
-        }
-        $did = $this->request->get('did', 0);
-        if (empty($did)) {
+        $this->user->pass('editor');
+
+        if (empty($did = $this->request->get('did', 0))) {
             $this->error('动态不存在');
         }
 
-        if (self::deleteOf($this->user->uid, [$did])) {
+        if (self::deleteOf($this->user->uid, array($did))) {
             $this->success();
         } else {
             $this->error('没有可以删除的动态');

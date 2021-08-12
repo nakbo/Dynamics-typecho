@@ -168,7 +168,7 @@ class Dynamics_Abstract extends Typecho_Widget
         if (preg_match('/Nabo\/([^\s|;]+)/i', $this->agent, $regs)) {
             return '南博 ' . $regs[1];
         }
-        return $this->deviceInfo();
+        return $this->deviceInfo;
     }
 
     /**
@@ -184,7 +184,7 @@ class Dynamics_Abstract extends Typecho_Widget
         if (preg_match('/\(.*;\s(.*)\sBuild.*\)/i', $this->agent, $regs)) {
             return $regs[1];
         }
-        return $this->deviceOs();
+        return $this->deviceOs;
     }
 
     /**
@@ -214,6 +214,7 @@ class Dynamics_Abstract extends Typecho_Widget
 
     /**
      * 动态创建时间
+     *
      * @param null $format
      */
     public function date($format = NULL)
@@ -223,6 +224,7 @@ class Dynamics_Abstract extends Typecho_Widget
 
     /**
      * 动态创建时间
+     *
      * @param null $format
      */
     public function created($format = NULL)
@@ -232,6 +234,7 @@ class Dynamics_Abstract extends Typecho_Widget
 
     /**
      * 动态更新时间
+     *
      * @param null $format
      */
     public function modified($format = NULL)
@@ -252,5 +255,80 @@ class Dynamics_Abstract extends Typecho_Widget
     public function navigator($prev = '&laquo;', $next = '&raquo;', $splitPage = 3, $splitWord = '...', $template = '')
     {
         $this->archive->pageNav($prev, $next, $splitPage, $splitWord, $template);
+    }
+
+    /**
+     * @param Widget_Archive $archive
+     * @param Typecho_Db_Query $select
+     * @throws Typecho_Db_Exception
+     * @throws Typecho_Exception
+     */
+    public static function archiveQuery($archive, $select)
+    {
+        $db = Typecho_Db::get();
+        if (strpos($archive->parameter->type, 'index') !== 0) {
+            $db->fetchAll($select, [$archive, 'push']);
+            return;
+        }
+
+        $option = Typecho_Widget::widget('Dynamics_Option');
+        if (empty($option->allowIndex)) {
+            $db->fetchAll($select, [$archive, 'push']);
+            return;
+        }
+
+        $dynamicNum = $db->fetchObject($db->select(array('COUNT(DISTINCT table.dynamics.did)' => 'num'))
+            ->from('table.dynamics')
+            ->where('table.dynamics.status = ?', 'publish')
+            ->cleanAttribute('group'))->num;
+        if (empty($dynamicNum)) {
+            $db->fetchAll($select, [$archive, 'push']);
+            return;
+        }
+
+        $dynamicSize = 5;
+        $archive->parameter->pageSize += $dynamicSize;
+
+        $article = $select->prepare($select);
+        $dynamic = $db->select('table.dynamics.did as cid', 'null as title', 'null as slug', 'table.dynamics.created', 'table.dynamics.authorId',
+            'table.dynamics.modified', "'dynamic' as type", 'table.dynamics.status', 'table.dynamics.text', '0 as commentsNum', '0 as order',
+            'null as template', 'null as password', '0 as allowComment', '0 as allowPing', '0 as allowFeed', '0 as parent')
+            ->from('table.dynamics')
+            ->where('table.dynamics.status = ?', 'publish')
+            ->order('table.dynamics.created', Typecho_Db::SORT_DESC)
+            ->page(isset($archive->request->page) ? $archive->request->page : 1, $dynamicSize);
+        $dynamic = $dynamic->prepare($dynamic);
+
+        $articleNum = $db->fetchObject($archive->getCountSql()
+            ->select(array('COUNT(DISTINCT table.contents.cid)' => 'num'))
+            ->from('table.contents')
+            ->cleanAttribute('group'))->num;
+        $archive->setTotal($articleNum + $dynamicNum);
+
+        $tags = array();
+        $categories = array([
+            'name' => '动态',
+            'permalink' => $option->homepage
+        ]);
+
+        foreach ($db->fetchAll("($article) UNION ($dynamic) ORDER BY created DESC") as $value) {
+            if ($value['type'] == 'dynamic') {
+                $value['title'] = date('m月d日, Y年', $value['created']);
+                $value['tags'] = &$tags;
+                $value['categories'] = &$categories;
+                $value['permalink'] = $option->applyUrl($value['cid']);
+                $value['isMarkdown'] = true;
+
+                $value['date'] = new Typecho_Date($value['created']);
+                $value['year'] = $value['date']->year;
+                $value['month'] = $value['date']->month;
+                $value['day'] = $value['date']->day;
+
+                $archive->length++;
+                $archive->stack[] = $value;
+            } else {
+                $archive->push($value);
+            }
+        }
     }
 }

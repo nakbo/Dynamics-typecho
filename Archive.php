@@ -276,13 +276,4 @@ class Dynamics_Archive extends Typecho_Widget
     {
         return $this->description ?: $this->options->description;
     }
-
-    /**
-     * 弃用
-     *
-     */
-    public function dispatch()
-    {
-        $this->post();
-    }
 }

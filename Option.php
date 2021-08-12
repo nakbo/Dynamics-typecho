@@ -27,13 +27,11 @@ class Dynamics_Option extends Typecho_Widget
         }
 
         if ($this->followPath) {
-            $this->themesPath = '/';
-            $this->themesFile = __TYPECHO_ROOT_DIR__ . __TYPECHO_THEME_DIR__ . $this->themesPath;
-            $this->themesUrl = Typecho_Common::url(__TYPECHO_THEME_DIR__ . "/{$this->themesPath}/", $this->options->index);
+            $this->themesFile = __TYPECHO_ROOT_DIR__ . __TYPECHO_THEME_DIR__ . '/';
+            $this->themesUrl = Typecho_Common::url(__TYPECHO_THEME_DIR__ . '/', $this->options->index);
         } else {
-            $this->themesPath = '/Dynamics/themes/';
-            $this->themesFile = __TYPECHO_ROOT_DIR__ . __TYPECHO_PLUGIN_DIR__ . $this->themesPath;
-            $this->themesUrl = Typecho_Common::url("{$this->themesPath}/", $this->options->pluginUrl);
+            $this->themesFile = __TYPECHO_ROOT_DIR__ . __TYPECHO_PLUGIN_DIR__ . '/Dynamics/themes/';
+            $this->themesUrl = Typecho_Common::url('/Dynamics/themes/', $this->options->pluginUrl);
         }
         $this->homepage = Typecho_Common::url(Dynamics_Plugin::DYNAMICS_ROUTE, $this->options->index);
     }
