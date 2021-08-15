@@ -74,8 +74,8 @@ class Dynamics_Plugin implements Typecho_Plugin_Interface
         Typecho_Plugin::factory('Nabo_Dynamics')->delete = ['Dynamics_Action', 'deleteOf'];
         Typecho_Plugin::factory('Nabo_Dynamics')->select = ['Dynamics_Action', 'selectOf'];
 
-        Helper::addPanel(3, 'Dynamics/Manage.php', '我的动态', '动态列表', 'administrator');
-        Helper::addPanel(1, 'Dynamics/Themes.php', '动态外观', '动态主题列表', 'administrator');
+        Helper::addPanel(3, 'Dynamics/Manage.php', '我的动态', '动态管理', 'editor');
+        Helper::addPanel(1, 'Dynamics/Themes.php', '动态外观', '动态主题', 'administrator');
         Helper::addAction('dynamics', 'Dynamics_Action');
         Helper::addRoute('dynamics-index', Dynamics_Plugin::DYNAMICS_ROUTE, 'Dynamics_Archive', 'index');
         Helper::addRoute('dynamics-route', Dynamics_Plugin::DYNAMICS_ROUTE . '[slug].html', 'Dynamics_Archive', 'post');
@@ -227,7 +227,7 @@ class Dynamics_Plugin implements Typecho_Plugin_Interface
         if ($isInit) {
             $themeName = 'AlphaPure';
             $settings['theme'] = $themeName;
-            $settings['themeConfig'] = Dynamics_Plugin::changeTheme($themeName);
+            $settings['themeConfig'] = self::changeTheme($themeName);
         } else {
             $config = Helper::options()->plugin('Dynamics');
             $settings['theme'] = $config->theme;
