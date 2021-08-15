@@ -146,7 +146,7 @@ class Dynamics_Plugin implements Typecho_Plugin_Interface
             'allowIndex', array(
             '0' => '关闭',
             '1' => '允许',
-        ), '1', '首页插入动态', '启用后博客首页的文章按照时间顺序插入动态');
+        ), '0', '首页插入动态', '启用后博客首页的文章按照时间顺序插入动态');
         $form->addInput($radio);
 
         $radio = new Typecho_Widget_Helper_Form_Element_Text(
