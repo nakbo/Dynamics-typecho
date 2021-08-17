@@ -30,18 +30,21 @@ class Dynamics_Plugin implements Typecho_Plugin_Interface
         $adapterName = $db->getAdapterName();
 
         if (strpos($adapterName, 'Mysql') !== false) {
-            if ($db->fetchRow($db->query("SHOW TABLES LIKE '{$prefix}dynamics';"))) {
-                if ($rows = $db->fetchRow($db->select()->from('table.dynamics'))) {
-                    $alter = array(
-                        'agent' => 'ALTER TABLE `' . $prefix . 'dynamics` ADD `agent` varchar(511) DEFAULT NULL;'
-                    );
-                    foreach ($alter as $column => $query) {
-                        if (!array_key_exists($column, $rows)) {
-                            $db->query($query);
-                        }
+            try {
+                $columns = $db->fetchAll($db->query("SHOW COLUMNS FROM {$prefix}dynamics;"));
+                $columns = array_map(function ($column) {
+                    return $column['Field'];
+                }, $columns);
+                $alter = array(
+                    'agent' => 'ALTER TABLE `' . $prefix . 'dynamics` ADD `agent` varchar(511) DEFAULT NULL;'
+                );
+                foreach ($alter as $column => $query) {
+                    if (!in_array($column, $columns)) {
+                        $db->query($query);
                     }
                 }
-            } else {
+            } catch (Exception $e) {
+                $charset = $db->getConfig()['charset'] ?: 'utf8';
                 $db->query('CREATE TABLE IF NOT EXISTS `' . $prefix . 'dynamics` (
                 `did` int(11) unsigned NOT NULL AUTO_INCREMENT,
                 `authorId` int(11) DEFAULT NULL,
@@ -51,7 +54,7 @@ class Dynamics_Plugin implements Typecho_Plugin_Interface
                 `created` int(10)	 DEFAULT 0,
                 `modified` int(10)  DEFAULT 0,
                 PRIMARY KEY (`did`)
-              ) DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;');
+              ) DEFAULT CHARSET=' . $charset);
             }
         } else if (strpos($adapterName, 'SQLite') !== false) {
             if (!$db->fetchRow($db->query("SELECT name FROM sqlite_master WHERE TYPE='table' AND name='{$prefix}dynamics';", Typecho_Db::READ))) {
@@ -87,9 +90,16 @@ class Dynamics_Plugin implements Typecho_Plugin_Interface
      * 禁用插件
      *
      * @return string|void
+     * @throws Typecho_Db_Exception
+     * @throws Typecho_Plugin_Exception
      */
     public static function deactivate()
     {
+        if (Helper::options()->plugin('Dynamics')->allowDrop) {
+            $db = Typecho_Db::get();
+            $db->query("DROP TABLE `{$db->getPrefix()}dynamics`", Typecho_Db::WRITE);
+        }
+
         Helper::removePanel(3, 'Dynamics/Manage.php');
         Helper::removePanel(1, 'Dynamics/Themes.php');
         Helper::removeAction('dynamics');
@@ -188,6 +198,13 @@ class Dynamics_Plugin implements Typecho_Plugin_Interface
             'avatarSize', null, '45',
             '头像图像大小', '调用不合适尺寸的图片会对前端加载速度造成影响，请按照自己的需求选择输出合适尺寸的图片<br>单位：px');
         $form->addInput($radio);
+
+        $drop = new Typecho_Widget_Helper_Form_Element_Radio(
+            'allowDrop', array(
+            '0' => '不删除',
+            '1' => '删除',
+        ), '0', '删数据表', '请选择是否在禁用插件时，删除我的动态的数据表，此表是本插件创建的。如果选择不删除，那么禁用后再次启用还是之前的用户数据就不用重新个人配置');
+        $form->addInput($drop);
 
         $btn = new Typecho_Widget_Helper_Form_Element_Submit();
         $btn->input->setAttribute('class', 'btn');

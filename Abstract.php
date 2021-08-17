@@ -277,10 +277,19 @@ class Dynamics_Abstract extends Typecho_Widget
             return;
         }
 
-        $dynamicNum = $db->fetchObject($db->select(array('COUNT(DISTINCT table.dynamics.did)' => 'num'))
-            ->from('table.dynamics')
-            ->where('table.dynamics.status = ?', 'publish')
-            ->cleanAttribute('group'))->num;
+        $user = Typecho_Widget::widget('Widget_User');
+        $selectCount = $db->select(array('COUNT(DISTINCT table.dynamics.did)' => 'num'))
+            ->from('table.dynamics');
+        if ($user->hasLogin()) {
+            $selectCount->where(
+                'table.dynamics.status = ? OR (table.dynamics.status = ? AND table.dynamics.authorId = ?)',
+                'publish', 'private', $user->uid);
+        } else {
+            $selectCount->where('table.dynamics.status = ?', 'publish');
+        }
+
+        $dynamicNum = $db->fetchObject(
+            $selectCount->cleanAttribute('group'))->num;
         if (empty($dynamicNum)) {
             $db->fetchAll($select, [$archive, 'push']);
             return;
@@ -289,16 +298,22 @@ class Dynamics_Abstract extends Typecho_Widget
         $dynamicSize = 5;
         $archive->parameter->pageSize += $dynamicSize;
 
-        $article = $select->prepare($select);
-        $dynamic = $db->select('table.dynamics.did as cid', 'null as title', 'null as slug', 'table.dynamics.created', 'table.dynamics.authorId',
+        $selectDynamic = $db->select('table.dynamics.did as cid', 'null as title', 'null as slug', 'table.dynamics.created', 'table.dynamics.authorId',
             'table.dynamics.modified', "'dynamic' as type", 'table.dynamics.status', 'table.dynamics.text', '0 as commentsNum', '0 as order',
             'null as template', 'null as password', '0 as allowComment', '0 as allowPing', '0 as allowFeed', '0 as parent')
-            ->from('table.dynamics')
-            ->where('table.dynamics.status = ?', 'publish')
-            ->order('table.dynamics.created', Typecho_Db::SORT_DESC)
+            ->from('table.dynamics');
+        if ($user->hasLogin()) {
+            $selectDynamic->where(
+                'table.dynamics.status = ? OR (table.dynamics.status = ? AND table.dynamics.authorId = ?)',
+                'publish', 'private', $user->uid);
+        } else {
+            $selectDynamic->where('table.dynamics.status = ?', 'publish');
+        }
+        $dynamic = $selectDynamic->order('table.dynamics.created', Typecho_Db::SORT_DESC)
             ->page(isset($archive->request->page) ? $archive->request->page : 1, $dynamicSize);
         $dynamic = $dynamic->prepare($dynamic);
 
+        $article = $select->prepare($select);
         $articleNum = $db->fetchObject($archive->getCountSql()
             ->select(array('COUNT(DISTINCT table.contents.cid)' => 'num'))
             ->from('table.contents')
