@@ -1,47 +1,69 @@
 <?php
 
-class Dynamics_Archive extends Typecho_Widget
+namespace TypechoPlugin\Dynamics;
+
+use Typecho\Db;
+use Typecho\Request;
+use Typecho\Widget;
+use Typecho\Widget\Helper\PageNavigator\Box;
+use Widget\User;
+use Widget\Options;
+
+/**
+ * Class Archive
+ * @package TypechoPlugin\Dynamics
+ *
+ * @property int total
+ * @property int page
+ * @property int pageSize
+ * @property string type
+ * @property string|null slug
+ * @property string|null title
+ * @property string|null description
+ * @property string|null keywords
+ */
+class Archive extends Widget
 {
     /**
-     * @var Dynamics_Abstract
-     */
-    public $dynamic, $dynamics;
-
-    /**
-     * @var Typecho_Db
+     * @var Db
      */
     protected $db;
 
     /**
-     * @var Widget_User
+     * @var User
      */
     public $user;
 
     /**
-     * @var Widget_Options
+     * @var Option
+     */
+    public $option;
+
+    /**
+     * @var Options
      */
     public $options;
 
     /**
-     * @var Dynamics_Option
+     * @var Dynamic
      */
-    public $option;
+    public $dynamic, $dynamics;
 
     /**
      * @param $request
      * @param $response
      * @param null $params
-     * @throws Typecho_Exception
+     * @throws Db\Exception
      */
     public function __construct($request, $response, $params = NULL)
     {
         parent::__construct($request, $response, $params);
-        $this->db = Typecho_Db::get();
+        $this->db = Db::get();
         $this->options = $this->widget('Widget_Options');
         $this->option = $this->widget('Dynamics_Option');
         $this->user = $this->widget('Widget_User');
 
-        $this->dynamics = $this->widget('Dynamics_Abstract');
+        $this->dynamics = $this->widget('Dynamics_Dynamic');
         $this->dynamics->archive = &$this;
 
         $this->page = $this->request->get('paging', 1);
@@ -54,12 +76,13 @@ class Dynamics_Archive extends Typecho_Widget
     /**
      * 近期动态
      *
+     * @throws Db\Exception
      */
     private function select()
     {
         $this->db->fetchAll($this->dynamics->select()
             ->where('table.dynamics.status != ?', 'hidden')
-            ->order('table.dynamics.created', Typecho_Db::SORT_DESC)
+            ->order('table.dynamics.created', Db::SORT_DESC)
             ->page($this->page, $this->pageSize), [$this->dynamics, 'push']);
         $this->total = $this->dynamics->size($this->db->select()
             ->where('table.dynamics.status != ?', 'hidden')
@@ -69,6 +92,7 @@ class Dynamics_Archive extends Typecho_Widget
     /**
      * 动态首页
      *
+     * @throws Db\Exception
      */
     public function index()
     {
@@ -83,6 +107,7 @@ class Dynamics_Archive extends Typecho_Widget
     /**
      * 单个动态
      *
+     * @throws Db\Exception
      */
     public function post()
     {
@@ -110,6 +135,7 @@ class Dynamics_Archive extends Typecho_Widget
     /**
      * 展示分页
      * @param bool $import
+     * @throws Db\Exception
      */
     public function page($import = false)
     {
@@ -145,7 +171,7 @@ class Dynamics_Archive extends Typecho_Widget
      * @param $type
      * @return bool
      */
-    public function is($type)
+    public function is($type): bool
     {
         return $this->type == $type;
     }
@@ -200,7 +226,7 @@ class Dynamics_Archive extends Typecho_Widget
      * @param int $splitPage
      * @param string $splitWord
      * @param string $template
-     * @throws Typecho_Widget_Exception
+     * @throws Widget\Exception
      */
     public function pageNav($prev = '&laquo;', $next = '&raquo;', $splitPage = 3, $splitWord = '...', $template = '')
     {
@@ -219,11 +245,12 @@ class Dynamics_Archive extends Typecho_Widget
             $template = array_merge($default, $config);
 
             if ($this->total > $this->pageSize) {
-                $query = Typecho_Request::getInstance()->makeUriByRequest('paging={page}');
+                $query = Request::getInstance()->makeUriByRequest('paging={page}');
 
                 /** 使用盒状分页 */
-                $nav = new Typecho_Widget_Helper_PageNavigator_Box($this->total,
-                    $this->page, $this->pageSize, $query);
+                $nav = new Box(
+                    $this->total, $this->page, $this->pageSize, $query
+                );
 
                 echo '<' . $template['wrapTag'] . (empty($template['wrapClass'])
                         ? '' : ' class="' . $template['wrapClass'] . '"') . '>';
@@ -262,7 +289,7 @@ class Dynamics_Archive extends Typecho_Widget
      *
      * @return mixed
      */
-    public function ___keywords()
+    public function ___keywords(): string
     {
         return $this->keywords ?: $this->options->keywords;
     }
@@ -272,7 +299,7 @@ class Dynamics_Archive extends Typecho_Widget
      *
      * @return mixed
      */
-    public function ___description()
+    public function ___description(): string
     {
         return $this->description ?: $this->options->description;
     }

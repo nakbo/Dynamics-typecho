@@ -1,12 +1,23 @@
 <?php
+
+use Widget\Contents\Post\Edit;
+use Typecho\Widget\Request;
+use Typecho\Widget\Response;
+use Typecho\Request as HttpRequest;
+use Typecho\Response as HttpResponse;
+use Utils\Helper;
+
 include 'header.php';
 include 'menu.php';
-$post = new Widget_Contents_Post_Edit(
-    Typecho_Request::getInstance(), Typecho_Response::getInstance()
+
+$post = new Edit(
+    new Request(
+        HttpRequest::getInstance()
+    ), new Response(
+        HttpRequest::getInstance(),
+        HttpResponse::getInstance()
+    )
 );
-$post->push([
-    'isMarkdown' => true
-]);
 ?>
 <style type="text/css">
     .dynamic-row {

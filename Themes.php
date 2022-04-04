@@ -1,16 +1,24 @@
 <?php
+
+use Typecho\Common;
+use Typecho\Widget;
+use Typecho\Plugin as TypechoPlugin;
+use Typecho\Widget\Helper\Form;
+use Typecho\Widget\Helper\Form\Element\Submit;
+use Typecho\Widget\Exception as WidgetException;
+
 include 'common.php';
 include 'header.php';
 include 'menu.php';
-$option = Typecho_Widget::widget('Dynamics_Option');
+
+$option = Widget::widget('Dynamics_Option');
 
 /**
  * @return bool
- * @throws Typecho_Exception
  */
-function existConfig()
+function existConfig(): bool
 {
-    $option = Typecho_Widget::widget('Dynamics_Option');
+    $option = Widget::widget('Dynamics_Option');
     $configFile = $option->themesFile($option->theme, 'functions.php');
 
     if (file_exists($configFile)) {
@@ -24,7 +32,7 @@ function existConfig()
 
 if ($request->action == 'config'):
     if (!existConfig()) {
-        throw new Typecho_Widget_Exception(_t('外观配置功能不存在'), 404);
+        throw new WidgetException(_t('外观配置功能不存在'), 404);
     }
     ?>
     <div class="main">
@@ -47,8 +55,9 @@ if ($request->action == 'config'):
                     </ul>
                 </div>
                 <div class="col-mb-12 col-tb-8 col-tb-offset-2" role="form">
-                    <?php $form = new Typecho_Widget_Helper_Form($security->getIndex('/action/dynamics?do=configTheme'),
-                        Typecho_Widget_Helper_Form::POST_METHOD);
+                    <?php $form = new Form(
+                        $security->getIndex('/action/dynamics?do=configTheme'), Form::POST_METHOD
+                    );
                     _themeConfig($form);
                     $inputs = $form->getInputs();
 
@@ -60,7 +69,7 @@ if ($request->action == 'config'):
                         }
                     }
 
-                    $submit = new Typecho_Widget_Helper_Form_Element_Submit(NULL, NULL, _t('保存设置'));
+                    $submit = new Submit(NULL, NULL, _t('保存设置'));
                     $submit->input->setAttribute('class', 'btn primary');
                     $form->addItem($submit);
                     $form->render(); ?>
@@ -98,7 +107,7 @@ if ($request->action == 'config'):
                 }
             }
             if (empty($files)) {
-                throw new Typecho_Widget_Exception('风格文件不存在', 404);
+                throw new WidgetException('风格文件不存在', 404);
             }
             ?>
             <div class="row typecho-page-main" role="main">
@@ -197,7 +206,7 @@ if ($request->action == 'config'):
                                 foreach ($themes as $key => $theme) {
                                     $themeFile = $theme . '/index.php';
                                     if (file_exists($themeFile)) {
-                                        $info = Typecho_Plugin::parseInfo($themeFile);
+                                        $info = TypechoPlugin::parseInfo($themeFile);
                                         $info['name'] = basename($theme);
                                         if ($option->followPath && trim($info['dependence']) != 'Dynamics') {
                                             continue;
@@ -211,7 +220,7 @@ if ($request->action == 'config'):
                                         if ($screen) {
                                             $info['screen'] = $option->themesUrl($info['name'], basename(current($screen)));
                                         } else {
-                                            $info['screen'] = Typecho_Common::url('noscreen.png', $options->adminStaticUrl('img'));
+                                            $info['screen'] = Common::url('noscreen.png', $options->adminStaticUrl('img'));
                                         }
                                         $result[$key] = $info;
                                     }

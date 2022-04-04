@@ -1,14 +1,30 @@
 <?php
 
+namespace TypechoPlugin\Dynamics;
+
+use Typecho\Db;
+use Typecho\Request;
+use Typecho\Response;
+use Typecho\Plugin as TypechoPlugin;
+use Typecho\Plugin\PluginInterface;
+use Typecho\Plugin\Exception as PluginException;
+use Typecho\Widget;
+use Typecho\Widget\Helper\Form;
+use Typecho\Widget\Helper\Form\Element\Hidden;
+use Typecho\Widget\Helper\Form\Element\Text;
+use Typecho\Widget\Helper\Form\Element\Radio;
+use Typecho\Widget\Helper\Form\Element\Submit;
+use Utils\Helper;
+
 /**
  * 我的动态
  *
  * @package Dynamics
  * @author 南博工作室
- * @version 2.1.0
+ * @version 2.1.2
  * @link https://github.com/krait-team/Dynamics-typecho/graphs/contributors
  */
-class Dynamics_Plugin implements Typecho_Plugin_Interface
+class Plugin implements PluginInterface
 {
     /** 动态首页路径 */
     const DYNAMICS_ROUTE = '/dynamics/';
@@ -16,16 +32,16 @@ class Dynamics_Plugin implements Typecho_Plugin_Interface
     /**
      * 激活插件
      * @return string|void
-     * @throws Typecho_Db_Exception
-     * @throws Typecho_Plugin_Exception
+     * @throws PluginException
+     * @throws Db\Exception
      */
     public static function activate()
     {
         if (basename(dirname(__FILE__)) != 'Dynamics') {
-            throw new Typecho_Plugin_Exception(_t('插件目录名必须为 Dynamics'));
+            throw new PluginException(_t('插件目录名必须为 Dynamics'));
         }
 
-        $db = Typecho_Db::get();
+        $db = Db::get();
         $prefix = $db->getPrefix();
         $adapterName = $db->getAdapterName();
 
@@ -43,8 +59,7 @@ class Dynamics_Plugin implements Typecho_Plugin_Interface
                         $db->query($query);
                     }
                 }
-            } catch (Exception $e) {
-                $charset = $db->getConfig()['charset'] ?: 'utf8';
+            } catch (PluginException $e) {
                 $db->query('CREATE TABLE IF NOT EXISTS `' . $prefix . 'dynamics` (
                 `did` int(11) unsigned NOT NULL AUTO_INCREMENT,
                 `authorId` int(11) DEFAULT NULL,
@@ -54,7 +69,7 @@ class Dynamics_Plugin implements Typecho_Plugin_Interface
                 `created` int(10)	 DEFAULT 0,
                 `modified` int(10)  DEFAULT 0,
                 PRIMARY KEY (`did`)
-              ) DEFAULT CHARSET=' . $charset);
+              )');
             }
         } else if (strpos($adapterName, 'SQLite') !== false) {
             if (!$db->fetchRow($db->query("SELECT name FROM sqlite_master WHERE TYPE='table' AND name='{$prefix}dynamics';", Typecho_Db::READ))) {
@@ -68,20 +83,20 @@ class Dynamics_Plugin implements Typecho_Plugin_Interface
 		            "modified" int(10) DEFAULT 0);');
             }
         } else {
-            throw new Typecho_Plugin_Exception(_t('你的适配器为%s，目前只支持Mysql和SQLite', $adapterName));
+            throw new PluginException(_t('你的适配器为%s，目前只支持Mysql和SQLite', $adapterName));
         }
 
-        Typecho_Plugin::factory('Widget_Archive')->query = ['Dynamics_Abstract', 'archiveQuery'];
-        Typecho_Plugin::factory('Nabo_Dynamics')->insert = ['Dynamics_Action', 'insertOf'];
-        Typecho_Plugin::factory('Nabo_Dynamics')->modify = ['Dynamics_Action', 'modifyOf'];
-        Typecho_Plugin::factory('Nabo_Dynamics')->delete = ['Dynamics_Action', 'deleteOf'];
-        Typecho_Plugin::factory('Nabo_Dynamics')->select = ['Dynamics_Action', 'selectOf'];
+        TypechoPlugin::factory('Nabo_Dynamics')->insert = 'TypechoPlugin\Dynamics\Action::insertOf';
+        TypechoPlugin::factory('Nabo_Dynamics')->modify = 'TypechoPlugin\Dynamics\Action::modifyOf';
+        TypechoPlugin::factory('Nabo_Dynamics')->delete = 'TypechoPlugin\Dynamics\Action::deleteOf';
+        TypechoPlugin::factory('Nabo_Dynamics')->select = 'TypechoPlugin\Dynamics\Action::selectOf';
+        TypechoPlugin::factory('Widget_Archive')->query = 'TypechoPlugin\Dynamics\Dynamic::archiveQuery';
 
         Helper::addPanel(3, 'Dynamics/Manage.php', '我的动态', '动态管理', 'editor');
         Helper::addPanel(1, 'Dynamics/Themes.php', '动态外观', '动态主题', 'administrator');
-        Helper::addAction('dynamics', 'Dynamics_Action');
-        Helper::addRoute('dynamics-index', Dynamics_Plugin::DYNAMICS_ROUTE, 'Dynamics_Archive', 'index');
-        Helper::addRoute('dynamics-route', Dynamics_Plugin::DYNAMICS_ROUTE . '[slug].html', 'Dynamics_Archive', 'post');
+        Helper::addAction('dynamics', 'TypechoPlugin\Dynamics\Action');
+        Helper::addRoute('dynamics-index', Plugin::DYNAMICS_ROUTE, 'TypechoPlugin\Dynamics\Archive', 'index');
+        Helper::addRoute('dynamics-route', Plugin::DYNAMICS_ROUTE . '[slug].html', 'TypechoPlugin\Dynamics\Archive', 'post');
 
         return _t('动态插件已经激活');
     }
@@ -90,14 +105,14 @@ class Dynamics_Plugin implements Typecho_Plugin_Interface
      * 禁用插件
      *
      * @return string|void
-     * @throws Typecho_Db_Exception
-     * @throws Typecho_Plugin_Exception
+     * @throws Db\Exception
+     * @throws PluginException
      */
-    public static function deactivate()
+    public static function deactivate(): string
     {
         if (Helper::options()->plugin('Dynamics')->allowDrop) {
-            $db = Typecho_Db::get();
-            $db->query("DROP TABLE `{$db->getPrefix()}dynamics`", Typecho_Db::WRITE);
+            $db = Db::get();
+            $db->query("DROP TABLE `{$db->getPrefix()}dynamics`", Db::WRITE);
         }
 
         Helper::removePanel(3, 'Dynamics/Manage.php');
@@ -105,6 +120,7 @@ class Dynamics_Plugin implements Typecho_Plugin_Interface
         Helper::removeAction('dynamics');
         Helper::removeRoute('dynamics-index');
         Helper::removeRoute('dynamics-route');
+
         return _t('动态插件已被禁用');
     }
 
@@ -112,13 +128,13 @@ class Dynamics_Plugin implements Typecho_Plugin_Interface
      * 在主题中直接调用
      *
      * @access public
-     * @throws Typecho_Exception
+     * @throws Db\Exception
      */
     public static function output()
     {
-        $action = new Dynamics_Archive(
-            Typecho_Request::getInstance(),
-            Typecho_Response::getInstance()
+        $action = new Archive(
+            Request::getInstance(),
+            Response::getInstance()
         );
         $action->page(true);
     }
@@ -126,14 +142,14 @@ class Dynamics_Plugin implements Typecho_Plugin_Interface
     /**
      * 在主题中直接调用
      *
-     * @return Dynamics_Archive
-     * @throws Typecho_Exception
+     * @return Archive
+     * @throws Db\Exception
      */
-    public static function get()
+    public static function get(): Archive
     {
-        $action = new Dynamics_Archive(
-            Typecho_Request::getInstance(),
-            Typecho_Response::getInstance()
+        $action = new Archive(
+            Request::getInstance(),
+            Response::getInstance()
         );
         $action->page();
         return $action;
@@ -142,71 +158,71 @@ class Dynamics_Plugin implements Typecho_Plugin_Interface
     /**
      * 插件配置面板
      *
-     * @param Typecho_Widget_Helper_Form $form
+     * @param Form $form
      */
-    public static function config(Typecho_Widget_Helper_Form $form)
+    public static function config(Form $form)
     {
-        $theme = new Typecho_Widget_Helper_Form_Element_Hidden('theme');
+        $theme = new Hidden('theme');
         $form->addInput($theme);
 
-        $themeConfig = new Typecho_Widget_Helper_Form_Element_Hidden('themeConfig');
+        $themeConfig = new Hidden('themeConfig');
         $form->addInput($themeConfig);
 
-        $radio = new Typecho_Widget_Helper_Form_Element_Radio(
+        $radio = new Radio(
             'allowIndex', array(
             '0' => '关闭',
             '1' => '允许',
         ), '0', '首页插入动态', '启用后博客首页的文章按照时间顺序插入动态');
         $form->addInput($radio);
 
-        $radio = new Typecho_Widget_Helper_Form_Element_Text(
+        $radio = new Text(
             'archiveId', null, 0,
             '附件归档', '这是动态附件归档的文章(cid), 请认真填写, 若为 0 表示不归档动态里的附件<br/>若动态里引用的文件未归档附件时候, 在<strong>动态发布时候</strong>将这些附件归档在这个文章里, 以防清理未规定附件时候被删掉.');
         $radio->input->setAttribute('class', 'mono w-35');
         $form->addInput($radio);
 
-        $radio = new Typecho_Widget_Helper_Form_Element_Radio(
+        $radio = new Radio(
             'followPath', array(
             '0' => '动态主题目录源',
             '1' => '博客主题目录源',
         ), '0', '动态主题源', '一般使用动态主题目录源  <a href="https://nabo.krait.cn/docs/#/course-dynamics?id=%E5%8A%A8%E6%80%81%E4%B8%BB%E9%A2%98%E6%BA%90" target="_blank">详情点击</a>');
         $form->addInput($radio);
 
-        $btn = new Typecho_Widget_Helper_Form_Element_Submit();
+        $btn = new Submit();
         $btn->input->setAttribute('class', 'btn');
         $btn->input->setAttribute('type', 'button');
         $btn->input->setAttribute('onclick', "javascrtpt:window.open('" . Helper::options()->adminUrl . "/extending.php?panel=Dynamics%2FThemes.php')");
         $form->addItem($btn);
         $btn->value(_t('设置动态外观'));
 
-        $radio = new Typecho_Widget_Helper_Form_Element_Text(
+        $radio = new Text(
             'title', null, '我的动态',
             '动态标题', '这是动态页面的标题.');
         $form->addInput($radio);
 
-        $radio = new Typecho_Widget_Helper_Form_Element_Text(
+        $radio = new Text(
             'pageSize', null, '5',
             '每页数目', '此数目用于动态首页每页显示的文章数目.');
         $form->addInput($radio);
 
-        $radio = new Typecho_Widget_Helper_Form_Element_Text(
+        $radio = new Text(
             'avatarRandomString', null, 'mm',
             '当无 Gravatar 头像时，使用的随机方案', '可以填些什么？可参照 <a href="https://en.gravatar.com/site/implement/images/#default-image" target="_blank">Gravatar 的官方说明</a>');
         $form->addInput($radio);
 
-        $radio = new Typecho_Widget_Helper_Form_Element_Text(
+        $radio = new Text(
             'avatarSize', null, '45',
             '头像图像大小', '调用不合适尺寸的图片会对前端加载速度造成影响，请按照自己的需求选择输出合适尺寸的图片<br>单位：px');
         $form->addInput($radio);
 
-        $drop = new Typecho_Widget_Helper_Form_Element_Radio(
+        $drop = new Radio(
             'allowDrop', array(
             '0' => '不删除',
             '1' => '删除',
         ), '0', '删数据表', '请选择是否在禁用插件时，删除我的动态的数据表，此表是本插件创建的。如果选择不删除，那么禁用后再次启用还是之前的用户数据就不用重新个人配置');
         $form->addInput($drop);
 
-        $btn = new Typecho_Widget_Helper_Form_Element_Submit();
+        $btn = new Submit();
         $btn->input->setAttribute('class', 'btn');
         $btn->input->setAttribute('type', 'button');
         $btn->input->setAttribute('onclick', "javascrtpt:window.open('" . Helper::options()->adminUrl . "/extending.php?panel=Dynamics%2FManage.php')");
@@ -217,15 +233,14 @@ class Dynamics_Plugin implements Typecho_Plugin_Interface
     /**
      * @param $settings
      * @return string|null
-     * @throws Typecho_Db_Exception
-     * @throws Typecho_Exception
-     * @throws Typecho_Plugin_Exception
+     * @throws Db\Exception
+     * @throws PluginException
      */
-    public static function configCheck($settings)
+    public static function configCheck($settings): ?string
     {
         $config = Helper::options()->plugin('Dynamics');
         if ($settings['archiveId'] != $config->archiveId) {
-            $db = Typecho_Db::get();
+            $db = Db::get();
             if (empty($db->fetchRow($db->select('cid')->from('table.contents')
                 ->where('cid = ? AND type != ?', $settings['archiveId'], 'attachment')))) {
                 return "提交的附件归档文章不存在 [cid={$settings['archiveId']}]";
@@ -237,7 +252,7 @@ class Dynamics_Plugin implements Typecho_Plugin_Interface
     /**
      * @param $settings
      * @param $isInit
-     * @throws Typecho_Exception
+     * @throws PluginException
      */
     public static function configHandle($settings, $isInit)
     {
@@ -256,18 +271,17 @@ class Dynamics_Plugin implements Typecho_Plugin_Interface
     /**
      * @param $theme
      * @return false|string
-     * @throws Typecho_Exception
      */
     public static function changeTheme($theme)
     {
-        $option = Typecho_Widget::widget('Dynamics_Option');
+        $option = Widget::widget('Dynamics_Option');
         $configTemp = [];
         if (is_dir($option->themesFile($theme))) {
             $configFile = $option->themesFile($theme, 'functions.php');
             if (file_exists($configFile)) {
                 require_once $configFile;
                 if (function_exists('_themeConfig')) {
-                    $form = new Typecho_Widget_Helper_Form();
+                    $form = new Form();
                     _themeConfig($form);
                     $configTemp = $form->getValues() ?: [];
                 }
@@ -277,9 +291,9 @@ class Dynamics_Plugin implements Typecho_Plugin_Interface
     }
 
     /**
-     * @param Typecho_Widget_Helper_Form $form
+     * @param Form $form
      */
-    public static function personalConfig(Typecho_Widget_Helper_Form $form)
+    public static function personalConfig(Form $form)
     {
     }
 

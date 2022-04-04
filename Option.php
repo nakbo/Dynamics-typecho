@@ -1,9 +1,21 @@
 <?php
 
-class Dynamics_Option extends Typecho_Widget
+namespace TypechoPlugin\Dynamics;
+
+use Typecho\Common;
+use Typecho\Widget;
+use Widget\Options;
+
+/**
+ * Class Option
+ * @package TypechoPlugin\Dynamics
+ *
+ * @property int pageSize
+ */
+class Option extends Widget
 {
     /**
-     * @var Widget_Options
+     * @var Options
      */
     private $options;
 
@@ -11,7 +23,6 @@ class Dynamics_Option extends Typecho_Widget
      * @param $request
      * @param $response
      * @param null $params
-     * @throws Typecho_Exception
      */
     public function __construct($request, $response, $params = NULL)
     {
@@ -28,12 +39,12 @@ class Dynamics_Option extends Typecho_Widget
 
         if ($this->followPath) {
             $this->themesFile = __TYPECHO_ROOT_DIR__ . __TYPECHO_THEME_DIR__ . '/';
-            $this->themesUrl = Typecho_Common::url(__TYPECHO_THEME_DIR__ . '/', $this->options->index);
+            $this->themesUrl = Common::url(__TYPECHO_THEME_DIR__ . '/', $this->options->index);
         } else {
             $this->themesFile = __TYPECHO_ROOT_DIR__ . __TYPECHO_PLUGIN_DIR__ . '/Dynamics/themes/';
-            $this->themesUrl = Typecho_Common::url('/Dynamics/themes/', $this->options->pluginUrl);
+            $this->themesUrl = Common::url('/Dynamics/themes/', $this->options->pluginUrl);
         }
-        $this->homepage = Typecho_Common::url(Dynamics_Plugin::DYNAMICS_ROUTE, $this->options->index);
+        $this->homepage = Common::url(Plugin::DYNAMICS_ROUTE, $this->options->index);
     }
 
     /**

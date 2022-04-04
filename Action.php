@@ -1,6 +1,17 @@
 <?php
 
-class Dynamics_Action extends Dynamics_Abstract implements Widget_Interface_Do
+namespace TypechoPlugin\Dynamics;
+
+use Typecho\Db;
+use Typecho\Plugin\Exception;
+use Typecho\Plugin\Exception as PluginException;
+use Typecho\Widget\Exception as WidgetException;
+use Typecho\Widget\Helper\Form;
+use Typecho\Widget;
+use Widget\ActionInterface;
+use Utils\Helper;
+
+class Action extends Dynamic implements ActionInterface
 {
     /**
      * 同步附件
@@ -9,9 +20,8 @@ class Dynamics_Action extends Dynamics_Abstract implements Widget_Interface_Do
      * @param $did
      * @param $text
      * @return void
-     * @throws Typecho_Db_Exception
-     * @throws Typecho_Exception
-     * @throws Typecho_Plugin_Exception
+     * @throws Db\Exception
+     * @throws PluginException
      */
     public static function attachOf($did, $text)
     {
@@ -19,13 +29,13 @@ class Dynamics_Action extends Dynamics_Abstract implements Widget_Interface_Do
         if (empty($did) || empty($option->archiveId)) {
             return;
         }
-        $db = Typecho_Db::get();
+        $db = Db::get();
         if (empty($db->fetchRow($db->select('cid')->from('table.contents')
             ->where('cid = ? AND type != ?', $option->archiveId, 'attachment')))) {
             return;
         }
 
-        Typecho_Widget::widget('Widget_Contents_Attachment_Unattached')->to($attach);
+        Widget::widget('Widget_Contents_Attachment_Unattached')->to($attach);
         $order = 0;
         while ($attach->next()) {
             if (strpos($text, $attach->attachment->url) !== false) {
@@ -49,9 +59,8 @@ class Dynamics_Action extends Dynamics_Abstract implements Widget_Interface_Do
      * @access protected
      * @param integer $did 内容id
      * @return void
-     * @throws Typecho_Db_Exception
-     * @throws Typecho_Exception
-     * @throws Typecho_Plugin_Exception
+     * @throws Db\Exception
+     * @throws PluginException
      */
     public static function unAttachOf($did)
     {
@@ -60,8 +69,8 @@ class Dynamics_Action extends Dynamics_Abstract implements Widget_Interface_Do
             return;
         }
 
-        $db = Typecho_Db::get();
-        Typecho_Widget::widget('Widget_Contents_Attachment_Related', 'parentId=' . $option->archiveId)->to($attach);
+        $db = Db::get();
+        Widget::widget('Widget_Contents_Attachment_Related', 'parentId=' . $option->archiveId)->to($attach);
 
         while ($attach->next()) {
             if ($did == $attach->attachment->dynamic) {
@@ -81,12 +90,12 @@ class Dynamics_Action extends Dynamics_Abstract implements Widget_Interface_Do
      * @param $uid
      * @param $dynamic
      * @return mixed
-     * @throws Typecho_Db_Exception
-     * @throws Typecho_Exception
+     * @throws Db\Exception
+     * @throws PluginException
      */
     public static function insertOf($uid, $dynamic)
     {
-        $db = Typecho_Db::get();
+        $db = Db::get();
         $dynamic['authorId'] = $uid;
         $dynamic['agent'] = $_SERVER['HTTP_USER_AGENT'];
 
@@ -104,12 +113,12 @@ class Dynamics_Action extends Dynamics_Abstract implements Widget_Interface_Do
      * @param $uid
      * @param $dynamic
      * @return mixed
-     * @throws Typecho_Db_Exception
-     * @throws Typecho_Exception
+     * @throws Db\Exception
+     * @throws PluginException
      */
     public static function modifyOf($uid, $dynamic)
     {
-        $db = Typecho_Db::get();
+        $db = Db::get();
         $dynamic['authorId'] = $uid;
 
         $db->query($db
@@ -127,13 +136,12 @@ class Dynamics_Action extends Dynamics_Abstract implements Widget_Interface_Do
      * @param $uid
      * @param $list
      * @return int
-     * @throws Typecho_Db_Exception
-     * @throws Typecho_Exception
-     * @throws Typecho_Plugin_Exception
+     * @throws Db\Exception
+     * @throws PluginException
      */
-    public static function deleteOf($uid, $list)
+    public static function deleteOf($uid, $list): int
     {
-        $db = Typecho_Db::get();
+        $db = Db::get();
         $deleteCount = 0;
 
         foreach ($list as $did) {
@@ -155,12 +163,11 @@ class Dynamics_Action extends Dynamics_Abstract implements Widget_Interface_Do
      * @param int $pageSize
      * @param int $currentPage
      * @return array
-     * @throws Typecho_Db_Exception
-     * @throws Typecho_Exception
+     * @throws Db\Exception
      */
-    public static function selectOf($uid, $status = null, $pageSize = 10, $currentPage = 1)
+    public static function selectOf($uid, $status = null, $pageSize = 10, $currentPage = 1): array
     {
-        $db = Typecho_Db::get();
+        $db = Db::get();
         $select = $db->select()->from('table.dynamics')
             ->where('authorId = ?', $uid);
 
@@ -168,11 +175,11 @@ class Dynamics_Action extends Dynamics_Abstract implements Widget_Interface_Do
             $select->where('status = ?', $status);
         }
 
-        $select->order('created', Typecho_Db::SORT_DESC)
+        $select->order('created', Db::SORT_DESC)
             ->page($currentPage, $pageSize);
 
         $data = $db->fetchAll($select);
-        $option = Typecho_Widget::widget('Dynamics_Option');
+        $option = Widget::widget('Dynamics_Option');
 
         $dynamics = [];
         foreach ($data as $dynamic) {
@@ -186,16 +193,19 @@ class Dynamics_Action extends Dynamics_Abstract implements Widget_Interface_Do
 
     /**
      * 新增
-     * @throws Typecho_Db_Exception|Typecho_Exception
+     *
+     * @throws Db\Exception
+     * @throws PluginException
+     * @throws WidgetException
      */
     public function addOf()
     {
         $this->user->pass('editor');
-        $dynamic = array(
+        $dynamic = [
             'text' => '滴滴打卡',
             'created' => $date = time(),
             'modified' => $date
-        );
+        ];
 
         $dynamic = self::insertOf($this->user->uid, $dynamic);
         $dynamic['nickname'] = $this->user->screenName;
@@ -206,15 +216,17 @@ class Dynamics_Action extends Dynamics_Abstract implements Widget_Interface_Do
     /**
      * 保存
      *
-     * @throws Typecho_Db_Exception|Typecho_Exception
+     * @throws Db\Exception
+     * @throws PluginException
+     * @throws WidgetException
      */
     public function saveOf()
     {
         $this->user->pass('editor');
-        $dynamic = array(
+        $dynamic = [
             'did' => $this->request->get('did', 0),
             'text' => $this->request->get('text', '')
-        );
+        ];
 
         $this->success($this->filterParam(
             self::modifyOf($this->user->uid, $dynamic)
@@ -223,7 +235,9 @@ class Dynamics_Action extends Dynamics_Abstract implements Widget_Interface_Do
 
     /**
      * 列表
-     * @throws Typecho_Exception
+     *
+     * @throws Db\Exception
+     * @throws Widget\Exception
      */
     public function listOf()
     {
@@ -236,7 +250,7 @@ class Dynamics_Action extends Dynamics_Abstract implements Widget_Interface_Do
             $select->where('table.dynamics.did < ? ', $lid);
         }
 
-        $select->order('table.dynamics.did', Typecho_Db::SORT_DESC)->limit(10);
+        $select->order('table.dynamics.did', Db::SORT_DESC)->limit(10);
         $data = $this->db->fetchAll($select);
 
         $dynamics = [];
@@ -249,7 +263,10 @@ class Dynamics_Action extends Dynamics_Abstract implements Widget_Interface_Do
 
     /**
      * 删除
-     * @throws Typecho_Exception
+     *
+     * @throws Db\Exception
+     * @throws Exception
+     * @throws Widget\Exception
      */
     public function removeOf()
     {
@@ -268,8 +285,7 @@ class Dynamics_Action extends Dynamics_Abstract implements Widget_Interface_Do
 
     /**
      * @param $theme
-     * @throws Typecho_Exception
-     * @throws Typecho_Plugin_Exception
+     * @throws Exception
      */
     public function changeTheme($theme)
     {
@@ -279,7 +295,7 @@ class Dynamics_Action extends Dynamics_Abstract implements Widget_Interface_Do
             $settings[$key] = $val;
         }
         $settings['theme'] = $theme;
-        $settings['themeConfig'] = Dynamics_Plugin::changeTheme($theme);
+        $settings['themeConfig'] = Plugin::changeTheme($theme);
         Helper::configPlugin('Dynamics', $settings);
 
         $this->widget('Widget_Notice')->set(_t("动态主题已经改变"), NULL, 'success');
@@ -293,16 +309,15 @@ class Dynamics_Action extends Dynamics_Abstract implements Widget_Interface_Do
      * @param string $theme 外观名称
      * @param string $file 文件名
      * @return void
-     * @throws Typecho_Exception
-     * @throws Typecho_Widget_Exception
+     * @throws Exception
      */
-    public function editorTheme($theme, $file)
+    public function editorTheme(string $theme, string $file)
     {
-        $option = Typecho_Widget::widget('Dynamics_Option');
+        $option = Widget::widget('Dynamics_Option');
         $path = $option->themesFile($theme, $file);
 
-        if (file_exists($path) && is_writeable($path) && !Typecho_Common::isAppEngine()
-            && (!defined('__TYPECHO_THEME_WRITEABLE__') || __TYPECHO_THEME_WRITEABLE__)) {
+        if (file_exists($path) && is_writeable($path) &&
+            (!defined('__TYPECHO_THEME_WRITEABLE__') || __TYPECHO_THEME_WRITEABLE__)) {
             $handle = fopen($path, 'wb');
             if ($handle && fwrite($handle, $this->request->content)) {
                 fclose($handle);
@@ -312,7 +327,7 @@ class Dynamics_Action extends Dynamics_Abstract implements Widget_Interface_Do
             }
             $this->response->goBack();
         } else {
-            throw new Typecho_Widget_Exception(_t('您编辑的文件不存在'));
+            throw new Exception(_t('您编辑的文件不存在'));
         }
     }
 
@@ -321,11 +336,11 @@ class Dynamics_Action extends Dynamics_Abstract implements Widget_Interface_Do
      *
      * @access public
      * @return void
-     * @throws Typecho_Exception
+     * @throws WidgetException
      */
     public function configTheme()
     {
-        $option = Typecho_Widget::widget('Dynamics_Option');
+        $option = Widget::widget('Dynamics_Option');
         $configFile = $option->themesFile($option->theme, 'functions.php');
 
         $isExists = false;
@@ -337,11 +352,11 @@ class Dynamics_Action extends Dynamics_Abstract implements Widget_Interface_Do
         }
 
         if (!$isExists) {
-            throw new Typecho_Widget_Exception(_t('外观配置功能不存在'), 404);
+            throw new WidgetException(_t('外观配置功能不存在'), 404);
         }
 
         // 已经载入了外观函数
-        $form = new Typecho_Widget_Helper_Form(NULL, Typecho_Widget_Helper_Form::POST_METHOD);
+        $form = new WidgetException(NULL, Form::POST_METHOD);
         _themeConfig($form);
 
         /** 验证表单 */
@@ -395,7 +410,6 @@ class Dynamics_Action extends Dynamics_Abstract implements Widget_Interface_Do
     /**
      * @param $dynamic
      * @return mixed
-     * @throws Typecho_Exception
      */
     private function filterParam($dynamic)
     {
@@ -406,7 +420,7 @@ class Dynamics_Action extends Dynamics_Abstract implements Widget_Interface_Do
             $statusName = '[隐藏] ';
         }
 
-        $option = Typecho_Widget::widget('Dynamics_Option');
+        $option = Widget::widget('Dynamics_Option');
 
         $dynamic['title'] = $statusName . date('m月d日, Y年', $dynamic['created']);
         $dynamic['url'] = $option->applyUrl($dynamic['did']);
