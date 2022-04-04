@@ -2,6 +2,7 @@
 
 namespace TypechoPlugin\Dynamics;
 
+use Exception;
 use Typecho\Db;
 use Typecho\Request;
 use Typecho\Response;
@@ -59,7 +60,7 @@ class Plugin implements PluginInterface
                         $db->query($query);
                     }
                 }
-            } catch (PluginException $e) {
+            } catch (Exception $e) {
                 $db->query('CREATE TABLE IF NOT EXISTS `' . $prefix . 'dynamics` (
                 `did` int(11) unsigned NOT NULL AUTO_INCREMENT,
                 `authorId` int(11) DEFAULT NULL,
@@ -86,11 +87,11 @@ class Plugin implements PluginInterface
             throw new PluginException(_t('你的适配器为%s，目前只支持Mysql和SQLite', $adapterName));
         }
 
-        TypechoPlugin::factory('Nabo_Dynamics')->insert = 'TypechoPlugin\Dynamics\Action::insertOf';
-        TypechoPlugin::factory('Nabo_Dynamics')->modify = 'TypechoPlugin\Dynamics\Action::modifyOf';
-        TypechoPlugin::factory('Nabo_Dynamics')->delete = 'TypechoPlugin\Dynamics\Action::deleteOf';
-        TypechoPlugin::factory('Nabo_Dynamics')->select = 'TypechoPlugin\Dynamics\Action::selectOf';
-        TypechoPlugin::factory('Widget_Archive')->query = 'TypechoPlugin\Dynamics\Dynamic::archiveQuery';
+        TypechoPlugin::factory('Nabo_Dynamics')->insert = 'TypechoPlugin\Dynamics\Action::onInsert';
+        TypechoPlugin::factory('Nabo_Dynamics')->modify = 'TypechoPlugin\Dynamics\Action::onModify';
+        TypechoPlugin::factory('Nabo_Dynamics')->delete = 'TypechoPlugin\Dynamics\Action::onDelete';
+        TypechoPlugin::factory('Nabo_Dynamics')->select = 'TypechoPlugin\Dynamics\Action::onSelect';
+        TypechoPlugin::factory('Widget_Archive')->query = 'TypechoPlugin\Dynamics\Dynamic::onArchiveQuery';
 
         Helper::addPanel(3, 'Dynamics/Manage.php', '我的动态', '动态管理', 'editor');
         Helper::addPanel(1, 'Dynamics/Themes.php', '动态外观', '动态主题', 'administrator');

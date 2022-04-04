@@ -23,7 +23,7 @@ class Action extends Dynamic implements ActionInterface
      * @throws Db\Exception
      * @throws PluginException
      */
-    public static function attachOf($did, $text)
+    public static function onAttach($did, $text)
     {
         $option = Helper::options()->plugin('Dynamics');
         if (empty($did) || empty($option->archiveId)) {
@@ -62,7 +62,7 @@ class Action extends Dynamic implements ActionInterface
      * @throws Db\Exception
      * @throws PluginException
      */
-    public static function unAttachOf($did)
+    public static function onUnAttach($did)
     {
         $option = Helper::options()->plugin('Dynamics');
         if (empty($did) || empty($option->archiveId)) {
@@ -93,7 +93,7 @@ class Action extends Dynamic implements ActionInterface
      * @throws Db\Exception
      * @throws PluginException
      */
-    public static function insertOf($uid, $dynamic)
+    public static function onInsert($uid, $dynamic)
     {
         $db = Db::get();
         $dynamic['authorId'] = $uid;
@@ -102,8 +102,10 @@ class Action extends Dynamic implements ActionInterface
         $dynamic['did'] = $db->query($db
             ->insert('table.dynamics')
             ->rows($dynamic));
-        self::attachOf($dynamic['did'], $dynamic['text']);
 
+        self::onAttach(
+            $dynamic['did'], $dynamic['text']
+        );
         return $dynamic;
     }
 
@@ -116,7 +118,7 @@ class Action extends Dynamic implements ActionInterface
      * @throws Db\Exception
      * @throws PluginException
      */
-    public static function modifyOf($uid, $dynamic)
+    public static function onModify($uid, $dynamic)
     {
         $db = Db::get();
         $dynamic['authorId'] = $uid;
@@ -125,7 +127,7 @@ class Action extends Dynamic implements ActionInterface
             ->update('table.dynamics')
             ->rows($dynamic)
             ->where('did = ?', $dynamic['did']));
-        self::attachOf($dynamic['did'], $dynamic['text']);
+        self::onAttach($dynamic['did'], $dynamic['text']);
 
         return $dynamic;
     }
@@ -139,7 +141,7 @@ class Action extends Dynamic implements ActionInterface
      * @throws Db\Exception
      * @throws PluginException
      */
-    public static function deleteOf($uid, $list): int
+    public static function onDelete($uid, $list): int
     {
         $db = Db::get();
         $deleteCount = 0;
@@ -148,7 +150,7 @@ class Action extends Dynamic implements ActionInterface
             if ($db->query($db->delete('table.dynamics')
                 ->where('table.dynamics.did = ?', $did))) {
                 $deleteCount++;
-                self::unAttachOf($did);
+                self::onUnAttach($did);
             }
         }
 
@@ -165,7 +167,7 @@ class Action extends Dynamic implements ActionInterface
      * @return array
      * @throws Db\Exception
      */
-    public static function selectOf($uid, $status = null, $pageSize = 10, $currentPage = 1): array
+    public static function onSelect($uid, $status = null, $pageSize = 10, $currentPage = 1): array
     {
         $db = Db::get();
         $select = $db->select()->from('table.dynamics')
@@ -198,7 +200,7 @@ class Action extends Dynamic implements ActionInterface
      * @throws PluginException
      * @throws WidgetException
      */
-    public function addOf()
+    public function onAdd()
     {
         $this->user->pass('editor');
         $dynamic = [
@@ -207,7 +209,7 @@ class Action extends Dynamic implements ActionInterface
             'modified' => $date
         ];
 
-        $dynamic = self::insertOf($this->user->uid, $dynamic);
+        $dynamic = self::onInsert($this->user->uid, $dynamic);
         $dynamic['nickname'] = $this->user->screenName;
 
         $this->success($this->filterParam($dynamic));
@@ -220,7 +222,7 @@ class Action extends Dynamic implements ActionInterface
      * @throws PluginException
      * @throws WidgetException
      */
-    public function saveOf()
+    public function onSave()
     {
         $this->user->pass('editor');
         $dynamic = [
@@ -229,7 +231,7 @@ class Action extends Dynamic implements ActionInterface
         ];
 
         $this->success($this->filterParam(
-            self::modifyOf($this->user->uid, $dynamic)
+            self::onModify($this->user->uid, $dynamic)
         ));
     }
 
@@ -239,7 +241,7 @@ class Action extends Dynamic implements ActionInterface
      * @throws Db\Exception
      * @throws Widget\Exception
      */
-    public function listOf()
+    public function onList()
     {
         $this->user->pass('editor');
         $select = $this->db->select('table.dynamics.*, table.users.screenName as nickname')
@@ -268,7 +270,7 @@ class Action extends Dynamic implements ActionInterface
      * @throws Exception
      * @throws Widget\Exception
      */
-    public function removeOf()
+    public function onRemove()
     {
         $this->user->pass('editor');
 
@@ -276,7 +278,7 @@ class Action extends Dynamic implements ActionInterface
             $this->error('动态不存在');
         }
 
-        if (self::deleteOf($this->user->uid, array($did))) {
+        if (self::onDelete($this->user->uid, array($did))) {
             $this->success();
         } else {
             $this->error('没有可以删除的动态');
@@ -436,10 +438,10 @@ class Action extends Dynamic implements ActionInterface
      */
     public function action()
     {
-        $this->on($this->request->is('do=add'))->addOf();
-        $this->on($this->request->is('do=save'))->saveOf();
-        $this->on($this->request->is('do=list'))->listOf();
-        $this->on($this->request->is('do=remove'))->removeOf();
+        $this->on($this->request->is('do=add'))->onAdd();
+        $this->on($this->request->is('do=save'))->onSave();
+        $this->on($this->request->is('do=list'))->onList();
+        $this->on($this->request->is('do=remove'))->onRemove();
 
         $this->on($this->request->is('do=changeTheme'))->changeTheme($this->request->filter('slug')->change);
         $this->on($this->request->is('do=editorTheme'))

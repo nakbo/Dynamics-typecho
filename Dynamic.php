@@ -288,6 +288,7 @@ class Dynamic extends Widget
      * @param int $splitPage
      * @param string $splitWord
      * @param string $template
+     * @throws Widget\Exception
      */
     public function navigator($prev = '&laquo;', $next = '&raquo;', $splitPage = 3, $splitWord = '...', $template = '')
     {
@@ -299,7 +300,7 @@ class Dynamic extends Widget
      * @param $article
      * @throws Db\Exception
      */
-    public static function archiveQuery($archive, $article)
+    public static function onArchiveQuery($archive, $article)
     {
         $db = Db::get();
         $db->fetchAll($article, [$archive, 'push']);
