@@ -45,26 +45,30 @@ $this->option 是动态主题下的
         <li>did: <?php $this->dynamics->did() ?></li>
         <li>mail: <?php $this->dynamics->mail() ?></li>
         <li>avatar: <?php $this->dynamics->avatar() ?></li>
+        <li>author: <?php $this->dynamics->author() ?></li>
         <li>authorId: <?php $this->dynamics->authorId() ?></li>
-        <li>authorName: <?php $this->dynamics->authorName() ?></li>
         <li>url: <?php $this->dynamics->url() ?></li>
+        <li>permalink: <?php $this->dynamics->permalink() ?></li>
         <li>created: <?php $this->dynamics->created('n\月j\日,Y  H:i:s') ?></li>
         <li>modified: <?php $this->dynamics->modified() ?></li>
         <li>data: <?php $this->dynamics->date('n\月j\日,Y  H:i:s') ?></li>
         <li>deviceTag: <?php $this->dynamics->deviceTag() ?></li>
         <li>deviceInfo: <?php $this->dynamics->deviceInfo() ?></li>
         <li>deviceOs: <?php $this->dynamics->deviceOs() ?></li>
+        <li>text: <?php echo $this->dynamics->text() ?></li>
         <li>content: <?php $this->dynamics->content() ?></li>
         <li>agent: <?php $this->dynamics->agent() ?></li>
         <li>status: <?php $this->dynamics->status() ?></li>
         <li>----------------------------------------------</li>
         <li>did: <?php echo $this->dynamics->did ?></li>
         <li>mail: <?php echo $this->dynamics->mail ?></li>
+        <li>author: <?php echo $this->dynamics->author ?></li>
         <li>authorId: <?php echo $this->dynamics->authorId ?></li>
-        <li>authorName: <?php echo $this->dynamics->authorName ?></li>
         <li>url: <?php echo $this->dynamics->url ?></li>
+        <li>permalink: <?php $this->dynamics->permalink ?></li>
         <li>created: <?php echo $this->dynamics->created ?></li>
         <li>modified: <?php echo $this->dynamics->modified ?></li>
+        <li>text: <?php echo $this->dynamics->text ?></li>
         <li>content: <?php echo $this->dynamics->content ?></li>
         <li>agent: <?php echo $this->dynamics->agent ?></li>
         <li>status: <?php echo $this->dynamics->status ?></li>

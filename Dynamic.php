@@ -2,7 +2,6 @@
 
 namespace TypechoPlugin\Dynamics;
 
-use Typecho\Common;
 use Typecho\Db;
 use Typecho\Widget;
 use Typecho\Db\Query;
@@ -61,20 +60,16 @@ class Dynamic extends Widget
     public $archive;
 
     /**
-     * 构造器
+     * Widget init
      *
-     * @param $request
-     * @param $response
-     * @param null $params
      * @throws Db\Exception
      */
-    public function __construct($request, $response, $params = NULL)
+    protected function init()
     {
-        parent::__construct($request, $response, $params);
         $this->db = Db::get();
-        $this->options = $this->widget('Widget_Options');
-        $this->option = $this->widget('Dynamics_Option');
-        $this->user = $this->widget('Widget_User');
+        $this->user = User::alloc();
+        $this->option = Option::alloc();
+        $this->options = Options::alloc();
     }
 
     /**
@@ -86,11 +81,10 @@ class Dynamic extends Widget
         return $this->db->select(
             'table.dynamics.*',
             'table.users.screenName',
-            'table.users.mail')
-            ->from('table.dynamics')
-            ->join('table.users',
-                'table.dynamics.authorId = table.users.uid', Db::LEFT_JOIN
-            );
+            'table.users.mail'
+        )->from('table.dynamics')->join('table.users',
+            'table.dynamics.authorId = table.users.uid', Db::LEFT_JOIN
+        );
     }
 
     /**
@@ -102,23 +96,28 @@ class Dynamic extends Widget
      */
     public function size(Query $condition): int
     {
-        return $this->db->fetchObject($condition
-            ->select(['COUNT(DISTINCT table.dynamics.did)' => 'num'])
-            ->from('table.dynamics')
-            ->cleanAttribute('group')
+        return $this->db->fetchObject(
+            $condition->select([
+                'COUNT(DISTINCT table.dynamics.did)' => 'num'
+            ])->from('table.dynamics')->cleanAttribute('group')
         )->num;
     }
 
     /**
+     * 用户昵称
+     *
      * @return string
      */
-    public function ___nickname(): string
+    public function ___author(): string
     {
         return $this->screenName;
     }
 
     /**
+     * 用户昵称
+     *
      * @return string
+     * @deprecated
      */
     public function ___authorName(): string
     {
@@ -126,14 +125,8 @@ class Dynamic extends Widget
     }
 
     /**
-     * @return string
-     */
-    public function ___permalink(): string
-    {
-        return $this->option->applyUrl($this->did);
-    }
-
-    /**
+     * 动态链接
+     *
      * @return string
      */
     public function ___url(): string
@@ -142,6 +135,30 @@ class Dynamic extends Widget
     }
 
     /**
+     * 动态标题
+     *
+     * @return string
+     */
+    public function ___title(): string
+    {
+        return date(
+            'm月d日, Y年', $this->created
+        );
+    }
+
+    /**
+     * 动态链接
+     *
+     * @return string
+     */
+    public function ___permalink(): string
+    {
+        return $this->option->applyUrl($this->did);
+    }
+
+    /**
+     * 渲染后的内容
+     *
      * @return string
      * @throws Db\Exception
      */
@@ -152,22 +169,29 @@ class Dynamic extends Widget
                 return '<div class="hideContent">这是一条私密动态</div>';
             }
         }
-        return Markdown::convert($this->text);
+
+        return Markdown::convert(
+            $this->text
+        );
     }
 
     /**
      * 获取操作系统信息
      *
      * @return string
+     * @author Shangjixin
      */
     public function ___deviceOs(): string
     {
-        if (($agent = $this->agent) == NULL) {
-            return "未知";
+        if (empty(($agent = $this->agent))) {
+            return '未知';
         }
+
         if (preg_match('/Android\s([^\s|;]+)/i', $agent, $regs)) {
             return 'Android ' . $regs[1];
-        } else if (preg_match('/windows\snt\s(10\.0|6\.3|6\.2|6\.1|6\.0|5\.1|5|.)/i', $agent, $regs)) {
+        }
+
+        if (preg_match('/windows\snt\s(10\.0|6\.3|6\.2|6\.1|6\.0|5\.1|5|.)/i', $agent, $regs)) {
             return 'Windows ' . [
                     '10.0' => '10',
                     '6.3' => '8.1',
@@ -177,7 +201,9 @@ class Dynamic extends Widget
                     '5.1' => 'XP',
                     '5' => '2000'
                 ][$regs[1]];
-        } else if (preg_match('/(iPad|ubuntu|linux|iPhone|macintosh|symbian|typecho)/i', $agent, $regs)) {
+        }
+
+        if (preg_match('/(iPad|ubuntu|linux|iPhone|macintosh|symbian|typecho)/i', $agent, $regs)) {
             return [
                 'ipad' => 'iPad',
                 'ubuntu' => 'Ubuntu',
@@ -189,6 +215,7 @@ class Dynamic extends Widget
                 'typecho' => 'Typecho.org'
             ][strtolower($regs[0])];
         }
+
         return '未知设备';
     }
 
@@ -196,16 +223,19 @@ class Dynamic extends Widget
      * 判断南博客户端
      *
      * @return string
+     * @author Shangjixin
      */
     public function ___deviceTag(): string
     {
-        if ($this->agent == NULL) {
+        if (empty($agent = $this->agent)) {
             //老版本南博并没有存储UA串
             return '南博 (旧版)';
         }
-        if (preg_match('/Nabo\/([^\s|;]+)/i', $this->agent, $regs)) {
+
+        if (preg_match('/Nabo\/([^\s|;]+)/i', $agent, $regs)) {
             return '南博 ' . $regs[1];
         }
+
         return $this->deviceInfo;
     }
 
@@ -213,15 +243,18 @@ class Dynamic extends Widget
      * 判断手机具体型号
      *
      * @return string
+     * @author Shangjixin
      */
     public function ___deviceInfo(): string
     {
-        if ($this->agent == NULL) {
-            return "未知";
+        if (empty($agent = $this->agent)) {
+            return '未知';
         }
-        if (preg_match('/\(.*;\s(.*)\sBuild.*\)/i', $this->agent, $regs)) {
+
+        if (preg_match('/\(.*;\s(.*)\sBuild.*\)/i', $agent, $regs)) {
             return $regs[1];
         }
+
         return $this->deviceOs;
     }
 
@@ -234,26 +267,56 @@ class Dynamic extends Widget
     }
 
     /**
-     * 头像
+     * 用户头像
      *
-     * @param string $size
-     * @param string $rating
-     * @param string $default
+     * @param int|null $size
      */
-    public function avatar($size = null, $rating = null, $default = null)
+    public function avatar($size = null)
     {
-        echo Common::gravatarUrl($this->mail,
-            $size ?: $this->option->avatarSize,
-            $rating ?: $this->options->commentsAvatarRating,
-            $default ?: $this->option->avatarRandomString,
-            $this->request->isSecure()
-        );
+        if (defined('__TYPECHO_GRAVATAR_PREFIX__')) {
+            $url = __TYPECHO_GRAVATAR_PREFIX__;
+        } else {
+            $url = $this->option->avatarPrefix;
+        }
+
+        if (is_string($mail = $this->mail)) {
+            $url .= md5(
+                strtolower($mail)
+            );
+        }
+
+        $url .= '?s=' . ($size ?: $this->option->avatarSize);
+        $url .= '&amp;d=' . $this->option->avatarRandom;
+
+        echo $url;
+    }
+
+    /**
+     * @param string $mail
+     * @param int $size
+     * @return string
+     */
+    public function avatarUrl(
+        string $mail,
+        int $size): string
+    {
+        if (defined('__TYPECHO_GRAVATAR_PREFIX__')) {
+            $url = __TYPECHO_GRAVATAR_PREFIX__;
+        } else {
+            $url = $this->option->avatarPrefix;
+        }
+
+        $url .= md5(strtolower($mail));
+        $url .= '?s=' . $size;
+        $url .= '&amp;d=' . $this->option->avatarRandom;
+
+        return $url;
     }
 
     /**
      * 动态创建时间
      *
-     * @param null $format
+     * @param string|null $format
      */
     public function date($format = NULL)
     {
@@ -263,7 +326,7 @@ class Dynamic extends Widget
     /**
      * 动态创建时间
      *
-     * @param null $format
+     * @param string|null $format
      */
     public function created($format = NULL)
     {
@@ -273,7 +336,7 @@ class Dynamic extends Widget
     /**
      * 动态更新时间
      *
-     * @param null $format
+     * @param string|null $format
      */
     public function modified($format = NULL)
     {
@@ -292,7 +355,9 @@ class Dynamic extends Widget
      */
     public function navigator($prev = '&laquo;', $next = '&raquo;', $splitPage = 3, $splitWord = '...', $template = '')
     {
-        $this->archive->pageNav($prev, $next, $splitPage, $splitWord, $template);
+        $this->archive->pageNav(
+            $prev, $next, $splitPage, $splitWord, $template
+        );
     }
 
     /**
@@ -300,51 +365,75 @@ class Dynamic extends Widget
      * @param $article
      * @throws Db\Exception
      */
-    public static function onArchiveQuery($archive, $article)
+    public static function onArchiveQuery(\Widget\Archive $archive, $article)
     {
         $db = Db::get();
-        $db->fetchAll($article, [$archive, 'push']);
-        if (strpos($archive->parameter->type, 'index') !== 0) {
-            return;
-        }
+        $db->fetchAll(
+            $article, [$archive, 'push']
+        );
+        if (strpos($archive->parameter->type, 'index') !== 0) return;
 
-        $option = Widget::widget('Dynamics_Option');
-        if (empty($option->allowIndex)) {
-            return;
-        }
+        $option = Option::alloc();
+        if (empty($option->allowIndex)) return;
 
-        $user = Widget::widget('Widget_User');
-        $dynamic = $db->select('table.dynamics.did as cid', 'null as title', 'null as slug', 'table.dynamics.created', 'table.dynamics.authorId',
-            'table.dynamics.modified', "'dynamic' as type", 'table.dynamics.status', 'table.dynamics.text', '0 as commentsNum', '0 as order',
-            'null as template', 'null as password', '0 as allowComment', '0 as allowPing', '0 as allowFeed', '0 as parent')
-            ->from('table.dynamics');
+        $user = User::alloc();
+        $dynamic = $db->select(
+            'table.dynamics.did as cid',
+            'null as title',
+            'null as slug',
+            'table.dynamics.created',
+            'table.dynamics.authorId',
+            'table.dynamics.modified',
+            "'dynamic' as type",
+            'table.dynamics.status',
+            'table.dynamics.text',
+            '0 as commentsNum',
+            '0 as order',
+            'null as template',
+            'null as password',
+            '0 as allowComment',
+            '0 as allowPing',
+            '0 as allowFeed',
+            '0 as parent'
+        )->from(
+            'table.dynamics'
+        );
+
         if ($user->hasLogin()) {
             $dynamic->where(
-                'table.dynamics.status = ? OR (table.dynamics.status = ? AND table.dynamics.authorId = ?)',
-                'publish', 'private', $user->uid);
+                'table.dynamics.status = ? OR (table.dynamics.status = ? AND table.dynamics.authorId = ?)', 'publish', 'private', $user->uid
+            );
         } else {
-            $dynamic->where('table.dynamics.status = ?', 'publish');
+            $dynamic->where(
+                'table.dynamics.status = ?', 'publish'
+            );
         }
 
         $dynamicNum = $db->fetchObject((clone $dynamic)
             ->select(['COUNT(DISTINCT table.dynamics.did)' => 'num'])
             ->from('table.dynamics')
             ->cleanAttribute('group'))->num;
-        if (empty($dynamicNum)) {
-            return;
-        }
 
-        $articleNum = $archive->size($archive->getCountSql());
-        $archive->setTotal($articleNum + $dynamicNum);
+        if (empty($dynamicNum)) return;
+
+        $articleNum = $archive->size(
+            $archive->getCountSql()
+        );
+        $archive->setTotal(
+            $articleNum + $dynamicNum
+        );
 
         $archive->parameter->pageSize += $dynamicSize = 5;
-        $dynamics = $db->fetchAll($dynamic
-            ->order('table.dynamics.created', Db::SORT_DESC)
-            ->page($archive->getCurrentPage(), $dynamicSize)
+        $dynamics = $db->fetchAll(
+            $dynamic->order(
+                'table.dynamics.created', Db::SORT_DESC
+            )->page($archive->getCurrentPage(), $dynamicSize)
         );
 
         foreach ($dynamics as $value) {
-            $value['title'] = date('m月d日, Y年', $value['created']);
+            $value['title'] = date(
+                'm月d日, Y年', $value['created']
+            );
             $value['isMarkdown'] = true;
             $value['tags'] = [];
             $value['categories'] = array([

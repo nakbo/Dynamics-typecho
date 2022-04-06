@@ -9,6 +9,9 @@ use Typecho\Widget\Exception as WidgetException;
 use Typecho\Widget\Helper\Form;
 use Typecho\Widget;
 use Widget\ActionInterface;
+use Widget\Notice;
+use Widget\Contents\Attachment\Related;
+use Widget\Contents\Attachment\Unattached;
 use Utils\Helper;
 
 class Action extends Dynamic implements ActionInterface
@@ -30,22 +33,31 @@ class Action extends Dynamic implements ActionInterface
             return;
         }
         $db = Db::get();
-        if (empty($db->fetchRow($db->select('cid')->from('table.contents')
-            ->where('cid = ? AND type != ?', $option->archiveId, 'attachment')))) {
-            return;
-        }
 
-        Widget::widget('Widget_Contents_Attachment_Unattached')->to($attach);
+        $result = $db->fetchRow($db
+            ->select('cid')
+            ->from('table.contents')
+            ->where('cid = ? AND type != ?', $option->archiveId, 'attachment')
+        );
+        if (empty($result)) return;
+
         $order = 0;
+        $attach = Unattached::alloc();
         while ($attach->next()) {
             if (strpos($text, $attach->attachment->url) !== false) {
-                $content = unserialize($attach->attachment->__toString());
+                $content = $attach->attachment->toArray();
                 $content['dynamic'] = $did;
                 unset($content['url'], $content['isImage']);
 
-                $db->query($db->update('table.contents')
-                    ->rows(array('text' => serialize($content), 'parent' => $option->archiveId, 'order' => ++$order))
-                    ->where('cid = ? AND type = ?', $attach->cid, 'attachment')
+                $db->query($db
+                    ->update('table.contents')->rows([
+                        'text' => serialize($content),
+                        'parent' => $option->archiveId,
+                        'order' => ++$order
+                    ])->where(
+                        'cid = ? AND type = ?',
+                        $attach->cid, 'attachment'
+                    )
                 );
                 unset($content);
             }
@@ -57,7 +69,7 @@ class Action extends Dynamic implements ActionInterface
      * 取消附件关联
      *
      * @access protected
-     * @param integer $did 内容id
+     * @param int $did
      * @return void
      * @throws Db\Exception
      * @throws PluginException
@@ -70,15 +82,21 @@ class Action extends Dynamic implements ActionInterface
         }
 
         $db = Db::get();
-        Widget::widget('Widget_Contents_Attachment_Related', 'parentId=' . $option->archiveId)->to($attach);
+        $attach = Related::alloc(
+            'parentId=' . $option->archiveId
+        );
 
         while ($attach->next()) {
             if ($did == $attach->attachment->dynamic) {
-                $content = unserialize($attach->attachment->__toString());
+                $content = $attach->attachment->toArray();
                 unset($content['dynamic'], $content['url'], $content['isImage']);
-                $db->query($db->update('table.contents')
-                    ->rows(array('text' => serialize($content), 'parent' => 0))
-                    ->where('cid = ? AND type = ?', $attach->cid, 'attachment'));
+                $db->query(
+                    $db->update('table.contents')->rows([
+                        'text' => serialize($content), 'parent' => 0
+                    ])->where(
+                        'cid = ? AND type = ?', $attach->cid, 'attachment'
+                    )
+                );
                 unset($content);
             }
         }
@@ -99,13 +117,16 @@ class Action extends Dynamic implements ActionInterface
         $dynamic['authorId'] = $uid;
         $dynamic['agent'] = $_SERVER['HTTP_USER_AGENT'];
 
-        $dynamic['did'] = $db->query($db
-            ->insert('table.dynamics')
-            ->rows($dynamic));
+        $dynamic['did'] = $db->query(
+            $db->insert('table.dynamics')
+                ->rows($dynamic)
+        );
 
         self::onAttach(
-            $dynamic['did'], $dynamic['text']
+            $dynamic['did'],
+            $dynamic['text']
         );
+
         return $dynamic;
     }
 
@@ -123,11 +144,17 @@ class Action extends Dynamic implements ActionInterface
         $db = Db::get();
         $dynamic['authorId'] = $uid;
 
-        $db->query($db
-            ->update('table.dynamics')
-            ->rows($dynamic)
-            ->where('did = ?', $dynamic['did']));
-        self::onAttach($dynamic['did'], $dynamic['text']);
+        $db->query(
+            $db->update('table.dynamics')
+                ->rows($dynamic)->where(
+                    'did = ?', $dynamic['did']
+                )
+        );
+
+        self::onAttach(
+            $dynamic['did'],
+            $dynamic['text']
+        );
 
         return $dynamic;
     }
@@ -181,7 +208,7 @@ class Action extends Dynamic implements ActionInterface
             ->page($currentPage, $pageSize);
 
         $data = $db->fetchAll($select);
-        $option = Widget::widget('Dynamics_Option');
+        $option = Option::alloc();
 
         $dynamics = [];
         foreach ($data as $dynamic) {
@@ -209,10 +236,14 @@ class Action extends Dynamic implements ActionInterface
             'modified' => $date
         ];
 
-        $dynamic = self::onInsert($this->user->uid, $dynamic);
+        $dynamic = self::onInsert(
+            $this->user->uid, $dynamic
+        );
         $dynamic['nickname'] = $this->user->screenName;
 
-        $this->success($this->filterParam($dynamic));
+        $this->success(
+            $this->filterParam($dynamic)
+        );
     }
 
     /**
@@ -230,9 +261,13 @@ class Action extends Dynamic implements ActionInterface
             'text' => $this->request->get('text', '')
         ];
 
-        $this->success($this->filterParam(
-            self::onModify($this->user->uid, $dynamic)
-        ));
+        $this->success(
+            $this->filterParam(
+                self::onModify(
+                    $this->user->uid, $dynamic
+                )
+            )
+        );
     }
 
     /**
@@ -278,7 +313,7 @@ class Action extends Dynamic implements ActionInterface
             $this->error('动态不存在');
         }
 
-        if (self::onDelete($this->user->uid, array($did))) {
+        if (self::onDelete($this->user->uid, [$did])) {
             $this->success();
         } else {
             $this->error('没有可以删除的动态');
@@ -291,16 +326,20 @@ class Action extends Dynamic implements ActionInterface
      */
     public function changeTheme($theme)
     {
-        $options = $this->options->plugin("Dynamics");
+        $options = $this->options->plugin('Dynamics');
         $settings = [];
         foreach ($options as $key => $val) {
             $settings[$key] = $val;
         }
         $settings['theme'] = $theme;
         $settings['themeConfig'] = Plugin::changeTheme($theme);
-        Helper::configPlugin('Dynamics', $settings);
 
-        $this->widget('Widget_Notice')->set(_t("动态主题已经改变"), NULL, 'success');
+        Helper::configPlugin(
+            'Dynamics', $settings
+        );
+        Notice::alloc()->set(
+            _t("动态主题已经改变"), NULL, 'success'
+        );
         $this->response->goBack();
     }
 
@@ -315,17 +354,23 @@ class Action extends Dynamic implements ActionInterface
      */
     public function editorTheme(string $theme, string $file)
     {
-        $option = Widget::widget('Dynamics_Option');
-        $path = $option->themesFile($theme, $file);
+        $option = Option::alloc();
+        $path = $option->themesFile(
+            $theme, $file
+        );
 
         if (file_exists($path) && is_writeable($path) &&
             (!defined('__TYPECHO_THEME_WRITEABLE__') || __TYPECHO_THEME_WRITEABLE__)) {
             $handle = fopen($path, 'wb');
             if ($handle && fwrite($handle, $this->request->content)) {
                 fclose($handle);
-                $this->widget('Widget_Notice')->set(_t("文件 %s 的更改已经保存", $file), 'success');
+                Notice::alloc()->set(
+                    _t("文件 %s 的更改已经保存", $file), 'success'
+                );
             } else {
-                $this->widget('Widget_Notice')->set(_t("文件 %s 无法被写入", $file), 'error');
+                Notice::alloc()->set(
+                    _t("文件 %s 无法被写入", $file), 'error'
+                );
             }
             $this->response->goBack();
         } else {
@@ -338,12 +383,15 @@ class Action extends Dynamic implements ActionInterface
      *
      * @access public
      * @return void
+     * @throws PluginException
      * @throws WidgetException
      */
     public function configTheme()
     {
-        $option = Widget::widget('Dynamics_Option');
-        $configFile = $option->themesFile($option->theme, 'functions.php');
+        $option = Option::alloc();
+        $configFile = $option->themesFile(
+            $option->theme, 'functions.php'
+        );
 
         $isExists = false;
         if (file_exists($configFile)) {
@@ -357,8 +405,9 @@ class Action extends Dynamic implements ActionInterface
             throw new WidgetException(_t('外观配置功能不存在'), 404);
         }
 
-        // 已经载入了外观函数
-        $form = new WidgetException(NULL, Form::POST_METHOD);
+        $form = new Form(
+            NULL, Form::POST_METHOD
+        );
         _themeConfig($form);
 
         /** 验证表单 */
@@ -375,11 +424,13 @@ class Action extends Dynamic implements ActionInterface
         }
         $settings['theme'] = $option->theme;
         $settings['themeConfig'] = serialize($config);
-        Helper::configPlugin('Dynamics', $settings);
 
-        /** 提示信息 */
-        $this->widget('Widget_Notice')->set(_t("动态主题设置已经保存"), 'success');
-        /** 转向原页 */
+        Helper::configPlugin(
+            'Dynamics', $settings
+        );
+        Notice::alloc()->set(
+            _t('动态主题设置已经保存'), 'success'
+        );
         $this->response->goBack();
     }
 
@@ -415,16 +466,16 @@ class Action extends Dynamic implements ActionInterface
      */
     private function filterParam($dynamic)
     {
-        $statusName = '';
+        $status = '';
         if ($dynamic["status"] == 'private') {
-            $statusName = '[私密] ';
+            $status = '[私密] ';
         } else if ($dynamic["status"] == 'hidden') {
-            $statusName = '[隐藏] ';
+            $status = '[隐藏] ';
         }
 
-        $option = Widget::widget('Dynamics_Option');
+        $option = Option::alloc();
 
-        $dynamic['title'] = $statusName . date('m月d日, Y年', $dynamic['created']);
+        $dynamic['title'] = $status . date('m月d日, Y年', $dynamic['created']);
         $dynamic['url'] = $option->applyUrl($dynamic['did']);
         $dynamic['desc'] = mb_substr(strip_tags($dynamic['text']),
             0, 20, 'utf-8'
@@ -444,8 +495,7 @@ class Action extends Dynamic implements ActionInterface
         $this->on($this->request->is('do=remove'))->onRemove();
 
         $this->on($this->request->is('do=changeTheme'))->changeTheme($this->request->filter('slug')->change);
-        $this->on($this->request->is('do=editorTheme'))
-            ->editorTheme($this->request->filter('slug')->theme, $this->request->edit);
+        $this->on($this->request->is('do=editorTheme'))->editorTheme($this->request->filter('slug')->theme, $this->request->edit);
         $this->on($this->request->is('do=configTheme'))->configTheme();
     }
 }

@@ -1,25 +1,27 @@
 <?php
 
 use Typecho\Common;
-use Typecho\Widget;
 use Typecho\Plugin as TypechoPlugin;
 use Typecho\Widget\Helper\Form;
 use Typecho\Widget\Helper\Form\Element\Submit;
 use Typecho\Widget\Exception as WidgetException;
+use TypechoPlugin\Dynamics\Option;
 
 include 'common.php';
 include 'header.php';
 include 'menu.php';
 
-$option = Widget::widget('Dynamics_Option');
+$option = Option::alloc();
 
 /**
  * @return bool
  */
 function existConfig(): bool
 {
-    $option = Widget::widget('Dynamics_Option');
-    $configFile = $option->themesFile($option->theme, 'functions.php');
+    $option = Option::alloc();
+    $configFile = $option->themesFile(
+        $option->theme, 'functions.php'
+    );
 
     if (file_exists($configFile)) {
         require_once $configFile;
@@ -32,7 +34,9 @@ function existConfig(): bool
 
 if ($request->action == 'config'):
     if (!existConfig()) {
-        throw new WidgetException(_t('外观配置功能不存在'), 404);
+        throw new WidgetException(
+            _t('外观配置功能不存在'), 404
+        );
     }
     ?>
     <div class="main">
@@ -89,7 +93,9 @@ if ($request->action == 'config'):
                     return preg_match("/\.(php|js|css|vbs)$/i", $path);
                 });
 
-                $_currentFile = $request->get('file', 'index.php');
+                $_currentFile = $request->get(
+                    'file', 'index.php'
+                );
 
                 if (preg_match("/^([_0-9a-z-\.\ ])+$/i", $_currentFile)
                     && file_exists($dir . '/' . $_currentFile)) {
@@ -107,7 +113,9 @@ if ($request->action == 'config'):
                 }
             }
             if (empty($files)) {
-                throw new WidgetException('风格文件不存在', 404);
+                throw new WidgetException(
+                    '风格文件不存在', 404
+                );
             }
             ?>
             <div class="row typecho-page-main" role="main">

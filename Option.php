@@ -11,40 +11,67 @@ use Widget\Options;
  * @package TypechoPlugin\Dynamics
  *
  * @property int pageSize
+ * @property string theme
+ * @property string homepage
+ * @property string themesUrl
+ * @property string followPath
+ * @property string themesFile
+ * @property string avatarSize
+ * @property string avatarPrefix
+ * @property string avatarRandom
  */
 class Option extends Widget
 {
+    /**
+     * @var string 默认主题相对路径
+     */
+    const DEFAULT_THEMES_DIR = '/Dynamics/themes/';
+
     /**
      * @var Options
      */
     private $options;
 
     /**
-     * @param $request
-     * @param $response
-     * @param null $params
+     * Widget init
      */
-    public function __construct($request, $response, $params = NULL)
+    protected function init()
     {
-        parent::__construct($request, $response, $params);
-        $this->options = $this->widget('Widget_Options');
+        $this->options = Options::alloc();
+        $config = unserialize(
+            $this->options->{'plugin:Dynamics'}
+        );
 
-        $config = unserialize($this->options->{'plugin:Dynamics'});
-        if (is_array($themeConfig = unserialize($config['themeConfig']))) {
-            $config = array_merge($config, $themeConfig);
-        }
         if (is_array($config)) {
+            $themeConfig = unserialize(
+                $config['themeConfig']
+            );
+            if (is_array($themeConfig)) {
+                // Dynamic theme configuration
+                // overrides dynamic plugin configuration
+                $config = array_merge(
+                    $config, $themeConfig
+                );
+            }
             $this->push($config);
         }
 
         if ($this->followPath) {
             $this->themesFile = __TYPECHO_ROOT_DIR__ . __TYPECHO_THEME_DIR__ . '/';
-            $this->themesUrl = Common::url(__TYPECHO_THEME_DIR__ . '/', $this->options->index);
+            $this->themesUrl = Common::url(
+                __TYPECHO_THEME_DIR__ . '/', $this->options->index
+            );
         } else {
-            $this->themesFile = __TYPECHO_ROOT_DIR__ . __TYPECHO_PLUGIN_DIR__ . '/Dynamics/themes/';
-            $this->themesUrl = Common::url('/Dynamics/themes/', $this->options->pluginUrl);
+            $this->themesFile = __TYPECHO_ROOT_DIR__ . __TYPECHO_PLUGIN_DIR__ . self::DEFAULT_THEMES_DIR;
+            $this->themesUrl = Common::url(
+                self::DEFAULT_THEMES_DIR, $this->options->pluginUrl
+            );
         }
-        $this->homepage = Common::url(Plugin::DYNAMICS_ROUTE, $this->options->index);
+
+        // Dynamic homepage path
+        $this->homepage = Common::url(
+            Plugin::DEFAULT_ROUTE, $this->options->index
+        );
     }
 
     /**
@@ -53,50 +80,50 @@ class Option extends Widget
      * @param $did
      * @return string
      */
-    public function applyUrl($did)
+    public function applyUrl($did): string
     {
-        return $this->homepage . str_replace('=', '', base64_encode($did)) . '.html';
+        $slug = str_replace(
+            '=', '', base64_encode($did)
+        );
+
+        return "{$this->homepage}$slug.html";
     }
 
     /**
      * 根据 slug 反解 did
      *
      * @param $slug
-     * @return int|string|null
+     * @return int
      */
-    public static function parseUrl($slug)
+    public function parseUrl($slug): int
     {
-        return intval($did = base64_decode(strval($slug) . '==')) > 0 ? $did : NULL;
+        $did = base64_decode(
+            strval($slug) . '=='
+        );
+
+        return intval($did);
     }
 
     /**
      * 动态首页
      *
-     * @param $path
+     * @param string $path
      */
-    public function homepage($path = NULL)
+    public function homepage(
+        string $path = '')
     {
-        echo $this->homepage . $path;
-    }
-
-    /**
-     * 弃用
-     *
-     * @param null $path
-     */
-    public function dynamicsUrl($path = NULL)
-    {
-        $this->homepage($path);
+        echo "{$this->homepage}$path";
     }
 
     /**
      * 动态主题路径
      *
-     * @param $path
+     * @param string $path
      */
-    public function themeUrl($path)
+    public function themeUrl(
+        string $path = '')
     {
-        echo $this->themesUrl . $this->theme . '/' . $path;
+        echo "{$this->themesUrl}{$this->theme}/$path";
     }
 
     /**
@@ -105,9 +132,10 @@ class Option extends Widget
      * @param string $path
      * @return string
      */
-    public function themeFile($path)
+    public function themeFile(
+        string $path = ''): string
     {
-        return $this->themesFile . $this->theme . '/' . $path;
+        return "{$this->themesFile}{$this->theme}/$path";
     }
 
     /**
@@ -115,22 +143,12 @@ class Option extends Widget
      *
      * @param string $path
      * @return string
+     * @deprecated
      */
-    public function _themeFile($path)
+    public function _themeFile(
+        string $path = ''): string
     {
-        return rtrim($this->options->themeFile($this->options->theme), '/') . '/' . $path;
-    }
-
-    /**
-     * 动态主题绝对路径
-     *
-     * @param string $theme
-     * @param string $file
-     * @return string
-     */
-    public function themesFile($theme, $file = '')
-    {
-        return $this->themesFile . trim($theme, './') . '/' . trim($file, './');
+        return "{$this->options->themeFile($this->options->theme)}/$path";
     }
 
     /**
@@ -140,8 +158,24 @@ class Option extends Widget
      * @param string $file
      * @return string
      */
-    public function themesUrl($theme, $file = '')
+    public function themesUrl(
+        string $theme,
+        string $file = ''): string
     {
-        return $this->themesUrl . trim($theme, './') . '/' . trim($file, './');
+        return "{$this->themesUrl}$theme/$file";
+    }
+
+    /**
+     * 动态主题绝对路径
+     *
+     * @param string $theme
+     * @param string $file
+     * @return string
+     */
+    public function themesFile(
+        string $theme,
+        string $file = ''): string
+    {
+        return "{$this->themesFile}$theme/$file";
     }
 }

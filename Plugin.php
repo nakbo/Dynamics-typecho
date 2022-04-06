@@ -4,17 +4,19 @@ namespace TypechoPlugin\Dynamics;
 
 use Exception;
 use Typecho\Db;
-use Typecho\Request;
-use Typecho\Response;
+use Typecho\Widget\Request;
+use Typecho\Widget\Response;
+use Typecho\Request as HttpRequest;
+use Typecho\Response as HttpResponse;
 use Typecho\Plugin as TypechoPlugin;
 use Typecho\Plugin\PluginInterface;
 use Typecho\Plugin\Exception as PluginException;
-use Typecho\Widget;
 use Typecho\Widget\Helper\Form;
 use Typecho\Widget\Helper\Form\Element\Hidden;
 use Typecho\Widget\Helper\Form\Element\Text;
 use Typecho\Widget\Helper\Form\Element\Radio;
 use Typecho\Widget\Helper\Form\Element\Submit;
+use Widget\Options;
 use Utils\Helper;
 
 /**
@@ -27,16 +29,18 @@ use Utils\Helper;
  */
 class Plugin implements PluginInterface
 {
-    /** 动态首页路径 */
-    const DYNAMICS_ROUTE = '/dynamics/';
+    /**
+     * @var string 默认动态首页相对路径
+     */
+    const DEFAULT_ROUTE = '/dynamics/';
 
     /**
      * 激活插件
-     * @return string|void
+     * @return string
      * @throws PluginException
      * @throws Db\Exception
      */
-    public static function activate()
+    public static function activate(): string
     {
         if (basename(dirname(__FILE__)) != 'Dynamics') {
             throw new PluginException(_t('插件目录名必须为 Dynamics'));
@@ -96,8 +100,8 @@ class Plugin implements PluginInterface
         Helper::addPanel(3, 'Dynamics/Manage.php', '我的动态', '动态管理', 'editor');
         Helper::addPanel(1, 'Dynamics/Themes.php', '动态外观', '动态主题', 'administrator');
         Helper::addAction('dynamics', 'TypechoPlugin\Dynamics\Action');
-        Helper::addRoute('dynamics-index', Plugin::DYNAMICS_ROUTE, 'TypechoPlugin\Dynamics\Archive', 'index');
-        Helper::addRoute('dynamics-route', Plugin::DYNAMICS_ROUTE . '[slug].html', 'TypechoPlugin\Dynamics\Archive', 'post');
+        Helper::addRoute('dynamics-index', Plugin::DEFAULT_ROUTE, 'TypechoPlugin\Dynamics\Archive', 'index');
+        Helper::addRoute('dynamics-route', Plugin::DEFAULT_ROUTE . '[slug].html', 'TypechoPlugin\Dynamics\Archive', 'post');
 
         return _t('动态插件已经激活');
     }
@@ -105,13 +109,13 @@ class Plugin implements PluginInterface
     /**
      * 禁用插件
      *
-     * @return string|void
+     * @return string
      * @throws Db\Exception
      * @throws PluginException
      */
     public static function deactivate(): string
     {
-        if (Helper::options()->plugin('Dynamics')->allowDrop) {
+        if (Options::alloc()->plugin('Dynamics')->allowDrop) {
             $db = Db::get();
             $db->query("DROP TABLE `{$db->getPrefix()}dynamics`", Db::WRITE);
         }
@@ -134,8 +138,12 @@ class Plugin implements PluginInterface
     public static function output()
     {
         $action = new Archive(
-            Request::getInstance(),
-            Response::getInstance()
+            new Request(
+                HttpRequest::getInstance()
+            ), new Response(
+                HttpRequest::getInstance(),
+                HttpResponse::getInstance()
+            )
         );
         $action->page(true);
     }
@@ -149,8 +157,12 @@ class Plugin implements PluginInterface
     public static function get(): Archive
     {
         $action = new Archive(
-            Request::getInstance(),
-            Response::getInstance()
+            new Request(
+                HttpRequest::getInstance()
+            ), new Response(
+                HttpRequest::getInstance(),
+                HttpResponse::getInstance()
+            )
         );
         $action->page();
         return $action;
@@ -207,13 +219,18 @@ class Plugin implements PluginInterface
         $form->addInput($radio);
 
         $radio = new Text(
-            'avatarRandomString', null, 'mm',
-            '当无 Gravatar 头像时，使用的随机方案', '可以填些什么？可参照 <a href="https://en.gravatar.com/site/implement/images/#default-image" target="_blank">Gravatar 的官方说明</a>');
+            'avatarSize', null, '45',
+            '头像图像大小', '调用不合适尺寸的图片会对前端加载速度造成影响，请按照自己的需求选择输出合适尺寸的图片<br>单位：px');
         $form->addInput($radio);
 
         $radio = new Text(
-            'avatarSize', null, '45',
-            '头像图像大小', '调用不合适尺寸的图片会对前端加载速度造成影响，请按照自己的需求选择输出合适尺寸的图片<br>单位：px');
+            'avatarPrefix', null, 'https://gravatar.loli.net/avatar/',
+            '头像镜像节点', '当设置了全局镜像源时该镜像节点配置将失效');
+        $form->addInput($radio);
+
+        $radio = new Text(
+            'avatarRandom', null, 'mm',
+            '当无 Gravatar 头像时，使用的随机方案', '可以填些什么？可参照 <a href="https://en.gravatar.com/site/implement/images/#default-image" target="_blank">Gravatar 的官方说明</a>');
         $form->addInput($radio);
 
         $drop = new Radio(
@@ -226,7 +243,9 @@ class Plugin implements PluginInterface
         $btn = new Submit();
         $btn->input->setAttribute('class', 'btn');
         $btn->input->setAttribute('type', 'button');
-        $btn->input->setAttribute('onclick', "javascrtpt:window.open('" . Helper::options()->adminUrl . "/extending.php?panel=Dynamics%2FManage.php')");
+        $btn->input->setAttribute(
+            'onclick', "javascrtpt:window.open('" . Options::alloc()->adminUrl . "/extending.php?panel=Dynamics%2FManage.php')"
+        );
         $form->addItem($btn);
         $btn->value(_t('管理动态'));
     }
@@ -239,7 +258,7 @@ class Plugin implements PluginInterface
      */
     public static function configCheck($settings): ?string
     {
-        $config = Helper::options()->plugin('Dynamics');
+        $config = Options::alloc()->plugin('Dynamics');
         if ($settings['archiveId'] != $config->archiveId) {
             $db = Db::get();
             if (empty($db->fetchRow($db->select('cid')->from('table.contents')
@@ -258,15 +277,18 @@ class Plugin implements PluginInterface
     public static function configHandle($settings, $isInit)
     {
         if ($isInit) {
-            $themeName = 'AlphaPure';
+            $themeName = 'Circle';
             $settings['theme'] = $themeName;
             $settings['themeConfig'] = self::changeTheme($themeName);
         } else {
-            $config = Helper::options()->plugin('Dynamics');
+            $config = Options::alloc()->plugin('Dynamics');
             $settings['theme'] = $config->theme;
             $settings['themeConfig'] = $config->themeConfig;
         }
-        Helper::configPlugin('Dynamics', $settings);
+
+        Helper::configPlugin(
+            'Dynamics', $settings
+        );
     }
 
     /**
@@ -275,10 +297,12 @@ class Plugin implements PluginInterface
      */
     public static function changeTheme($theme)
     {
-        $option = Widget::widget('Dynamics_Option');
+        $option = Option::alloc();
         $configTemp = [];
         if (is_dir($option->themesFile($theme))) {
-            $configFile = $option->themesFile($theme, 'functions.php');
+            $configFile = $option->themesFile(
+                $theme, 'functions.php'
+            );
             if (file_exists($configFile)) {
                 require_once $configFile;
                 if (function_exists('_themeConfig')) {
@@ -292,16 +316,16 @@ class Plugin implements PluginInterface
     }
 
     /**
-     * @param Form $form
+     * @param null $action
      */
-    public static function personalConfig(Form $form)
+    public static function form($action = NULL)
     {
     }
 
     /**
-     * @param null $action
+     * @param Form $form
      */
-    public static function form($action = NULL)
+    public static function personalConfig(Form $form)
     {
     }
 }

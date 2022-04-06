@@ -5,6 +5,7 @@ use Typecho\Widget\Request;
 use Typecho\Widget\Response;
 use Typecho\Request as HttpRequest;
 use Typecho\Response as HttpResponse;
+use TypechoPlugin\Dynamics\Plugin as DynamicsPlugin;
 use Utils\Helper;
 
 include 'header.php';
@@ -126,7 +127,8 @@ $post = new Edit(
             <div class="col-mb-12">
                 <ul class="typecho-option-tabs fix-tabs clearfix">
                     <li class="current"><a href="#">我的动态</a></li>
-                    <li><a href="<?php Helper::options()->index(Dynamics_Plugin::DYNAMICS_ROUTE); ?>" target="_blank">动态首页</a>
+                    <li><a href="<?php Helper::options()->index(DynamicsPlugin::DEFAULT_ROUTE); ?>"
+                           target="_blank">动态首页</a>
                     </li>
                     <li>
                         <a href="<?php Helper::options()->adminUrl('extending.php?panel=Dynamics%2FThemes.php'); ?>">主题设置</a>

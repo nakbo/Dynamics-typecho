@@ -50,27 +50,25 @@ class Archive extends Widget
     public $dynamic, $dynamics;
 
     /**
-     * @param $request
-     * @param $response
-     * @param null $params
+     * Widget init
+     *
      * @throws Db\Exception
      */
-    public function __construct($request, $response, $params = NULL)
+    protected function init()
     {
-        parent::__construct($request, $response, $params);
         $this->db = Db::get();
-        $this->options = $this->widget('Widget_Options');
-        $this->option = $this->widget('Dynamics_Option');
-        $this->user = $this->widget('Widget_User');
+        $this->user = User::alloc();
+        $this->option = Option::alloc();
+        $this->options = Options::alloc();
 
-        $this->dynamics = $this->widget('Dynamics_Dynamic');
+        $this->dynamics = Dynamic::alloc();
         $this->dynamics->archive = &$this;
-
-        $this->page = $this->request->get('paging', 1);
-        $this->pageSize = $this->option->pageSize;
 
         // compatible with older versions
         $this->dynamic = &$this->dynamics;
+
+        $this->page = $this->request->get('paging', 1);
+        $this->pageSize = $this->option->pageSize;
     }
 
     /**
@@ -80,12 +78,16 @@ class Archive extends Widget
      */
     private function select()
     {
-        $this->db->fetchAll($this->dynamics->select()
-            ->where('table.dynamics.status != ?', 'hidden')
-            ->order('table.dynamics.created', Db::SORT_DESC)
-            ->page($this->page, $this->pageSize), [$this->dynamics, 'push']);
-        $this->total = $this->dynamics->size($this->db->select()
-            ->where('table.dynamics.status != ?', 'hidden')
+        $this->db->fetchAll(
+            $this->dynamics->select()
+                ->where('table.dynamics.status != ?', 'hidden')
+                ->order('table.dynamics.created', Db::SORT_DESC)
+                ->page($this->page, $this->pageSize),
+            [$this->dynamics, 'push']
+        );
+
+        $this->total = $this->dynamics->size(
+            $this->db->select()->where('table.dynamics.status != ?', 'hidden')
         );
     }
 
@@ -115,19 +117,29 @@ class Archive extends Widget
         $this->slug = $this->request->slug;
         $this->import('functions.php');
 
-        $did = $this->option->parseUrl($this->slug);
+        $did = $this->option
+            ->parseUrl($this->slug);
         if (empty($did)) {
             $this->error404();
         }
 
-        $this->db->fetchAll($this->dynamics->select()
-            ->where("table.dynamics.did = ?", $did), [$this->dynamics, 'push']);
+        $this->db->fetchAll(
+            $this->dynamics->select()
+                ->where('table.dynamics.did = ?', $did),
+            [$this->dynamics, 'push']
+        );
 
         if ($this->error404) {
             $this->error404();
         }
-        $this->title = date("m月d日, Y年", $this->dynamics->created);
-        $this->description = mb_substr(strip_tags($this->dynamics->content), 0, 200, 'utf8');
+
+        $this->title = date(
+            'm月d日, Y年', $this->dynamics->created
+        );
+        $this->description = mb_substr(
+            strip_tags($this->dynamics->content),
+            0, 200, 'utf8'
+        );
 
         $this->import('post.php');
     }
