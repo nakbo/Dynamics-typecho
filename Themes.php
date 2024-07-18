@@ -7,7 +7,7 @@ use Typecho\Widget\Helper\Form\Element\Submit;
 use Typecho\Widget\Exception as WidgetException;
 use TypechoPlugin\Dynamics\Option;
 
-include 'common.php';
+
 include 'header.php';
 include 'menu.php';
 
