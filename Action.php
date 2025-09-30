@@ -467,15 +467,19 @@ class Action extends Dynamic implements ActionInterface
     private function filterParam($dynamic)
     {
         $status = '';
-        if ($dynamic["status"] == 'private') {
-            $status = '[私密] ';
-        } else if ($dynamic["status"] == 'hidden') {
-            $status = '[隐藏] ';
+        if (isset($dynamic["status"])) {
+             if ($dynamic["status"] == 'private') {
+                $status = '[私密] ';
+            } else if ($dynamic["status"] == 'hidden') {
+                $status = '[隐藏] ';
+            }
         }
 
         $option = Option::alloc();
-
-        $dynamic['title'] = $status . date('m月d日, Y年', $dynamic['created']);
+        if (isset($dynamic['created'])) {
+            $dynamic['title'] = $status . date('m月d日, Y年', $dynamic['created']);
+        }
+        
         $dynamic['url'] = $option->applyUrl($dynamic['did']);
         $dynamic['desc'] = mb_substr(strip_tags($dynamic['text']),
             0, 20, 'utf-8'
